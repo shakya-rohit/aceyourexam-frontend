@@ -1,0 +1,34 @@
+<div class="exam-container">
+  <mat-card *ngIf="exam">
+    <h2>{{ exam.title }}</h2>
+    <p>Time Remaining: <strong>{{ formattedTime }}</strong></p>
+    <mat-divider></mat-divider>
+
+    <div class="question-section">
+      <h3>Q{{ currentIndex + 1 }}. {{ questions[currentIndex].text }}</h3>
+
+      <mat-radio-group [(ngModel)]="selectedAnswers[questions[currentIndex].id]">
+        <mat-radio-button
+          *ngFor="let option of questions[currentIndex].options; let i = index"
+          [value]="i"
+          (change)="selectOption(questions[currentIndex].id, i)"
+          class="option"
+        >
+          {{ option }}
+        </mat-radio-button>
+      </mat-radio-group>
+    </div>
+
+    <div class="nav-buttons">
+      <button mat-stroked-button color="primary" (click)="prevQuestion()" [disabled]="currentIndex === 0">
+        Previous
+      </button>
+
+      <button mat-stroked-button color="primary" (click)="nextQuestion()" [disabled]="currentIndex === questions.length - 1">
+        Next
+      </button>
+
+      <button mat-raised-button color="accent" (click)="submitExam()">Submit</button>
+    </div>
+  </mat-card>
+</div>

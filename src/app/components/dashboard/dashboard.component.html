@@ -1,0 +1,37 @@
+<div class="dashboard-container">
+  <h2>Welcome, {{ user?.name || 'Student' }} 👋</h2>
+  <p>Here are your available exams:</p>
+
+  <div class="exam-list">
+    <mat-card *ngFor="let exam of exams" class="exam-card">
+      <h3>{{ exam.title }}</h3>
+      <p>Duration: {{ exam.duration }} mins</p>
+      <p>Total Marks: {{ exam.totalMarks }}</p>
+      <button mat-raised-button color="primary" (click)="startExam(exam)">Start Exam</button>
+    </mat-card>
+  </div>
+
+  <mat-divider style="margin: 2rem 0;"></mat-divider>
+
+  <div class="results-section">
+    <h3>Your Past Results</h3>
+
+    <ng-container *ngIf="results.length; else noResults">
+      <div *ngFor="let r of results" class="result-card">
+        <mat-card>
+          <strong>{{ r.examTitle }}</strong>
+          <div class="result-score">{{ r.totalScore }} / 720</div>
+          <div class="result-date">Submitted: {{ r.submittedAt }}</div>
+        </mat-card>
+      </div>
+    </ng-container>
+
+    <ng-template #noResults>
+      <p>No past results yet. Take a test to see them here!</p>
+    </ng-template>
+  </div>
+
+  <div style="margin-top: 2rem; text-align: center;">
+    <button mat-stroked-button color="warn" (click)="logout()">Logout</button>
+  </div>
+</div>

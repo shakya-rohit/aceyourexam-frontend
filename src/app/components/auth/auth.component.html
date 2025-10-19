@@ -1,0 +1,48 @@
+<div class="auth-container">
+  <mat-card class="auth-card">
+    <mat-tab-group>
+      <!-- Login Tab -->
+      <mat-tab label="Login">
+        <form (ngSubmit)="login()" style="margin-top: 1rem;">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Email</mat-label>
+            <input matInput type="email" [(ngModel)]="loginEmail" name="loginEmail" required>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Password</mat-label>
+            <input matInput type="password" [(ngModel)]="loginPassword" name="loginPassword" required>
+          </mat-form-field>
+
+          <button mat-raised-button color="primary" class="full-width" type="submit">
+            Login
+          </button>
+        </form>
+      </mat-tab>
+
+      <!-- Register Tab -->
+      <mat-tab label="Register">
+        <form (ngSubmit)="register()" style="margin-top: 1rem;">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Full Name</mat-label>
+            <input matInput [(ngModel)]="regName" name="regName" required>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Email</mat-label>
+            <input matInput type="email" [(ngModel)]="regEmail" name="regEmail" required>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Password</mat-label>
+            <input matInput type="password" [(ngModel)]="regPassword" name="regPassword" required>
+          </mat-form-field>
+
+          <button mat-raised-button color="accent" class="full-width" type="submit">
+            Register
+          </button>
+        </form>
+      </mat-tab>
+    </mat-tab-group>
+  </mat-card>
+</div>

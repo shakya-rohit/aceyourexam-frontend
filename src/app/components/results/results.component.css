@@ -1,0 +1,23 @@
+.results-container {
+  padding: 2rem;
+  text-align: center;
+}
+
+.results-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.result-card {
+  width: 300px;
+  padding: 1rem;
+}
+
+.feedback {
+  font-style: italic;
+  color: #00796b;
+  margin-top: 0.5rem;
+}

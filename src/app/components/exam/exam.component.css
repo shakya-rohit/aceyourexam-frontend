@@ -1,0 +1,25 @@
+.exam-container {
+  padding: 2rem;
+  display: flex;
+  justify-content: center;
+}
+
+mat-card {
+  width: 600px;
+  padding: 1.5rem;
+}
+
+.question-section {
+  margin: 1rem 0;
+}
+
+.option {
+  display: block;
+  margin: 0.5rem 0;
+}
+
+.nav-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1.5rem;
+}
