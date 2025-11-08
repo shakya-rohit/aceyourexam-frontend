@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { RouterOutlet, RouterModule } from '@angular/router';
+import { HeaderComponent } from './components/header/header.component';
 
 @Component({
   selector: 'app-root',
@@ -10,7 +11,8 @@ import { RouterOutlet, RouterModule } from '@angular/router';
     RouterOutlet,
     RouterModule,
     MatToolbarModule,
-    MatButtonModule
+    MatButtonModule,
+    HeaderComponent
   ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']

@@ -5,12 +5,39 @@ import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { ExamComponent } from './components/exam/exam.component';
 import { ResultsComponent } from './components/results/results.component';
 import { authGuard } from './guards/auth.guard';
+import { authRedirectGuard } from './guards/auth-redirect.guard';
 
 export const routes: Routes = [
-  { path: '', component: HomeComponent },
-  { path: 'auth', component: AuthComponent },
-  { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
-  { path: 'exam', component: ExamComponent, canActivate: [authGuard] },
-  { path: 'results', component: ResultsComponent, canActivate: [authGuard] },
-  { path: '**', redirectTo: '' }
+  {
+    path: '',
+    component: HomeComponent,
+    canActivate: [authRedirectGuard]   // 👈 smart redirect logic
+  },
+  {
+    path: 'auth',
+    component: AuthComponent
+  },
+  {
+    path: 'dashboard',
+    component: DashboardComponent,
+    canActivate: [authGuard]
+  },
+  {
+    path: 'exam',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./components/exam/exam.component').then(m => m.ExamComponent),
+    data: { preload: true }  // ✅ Preload this
+  },
+  {
+    path: 'results',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./components/results/results.component').then(m => m.ResultsComponent),
+    data: { preload: true }  // ✅ Preload this
+  },
+  {
+    path: '**',
+    redirectTo: ''
+  }
 ];

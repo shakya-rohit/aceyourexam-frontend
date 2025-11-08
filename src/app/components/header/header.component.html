@@ -1,0 +1,39 @@
+<mat-toolbar color="primary">
+  <span class="logo">AceYourExam</span>
+  <span class="spacer"></span>
+
+  <!-- Not logged in -->
+  <ng-container *ngIf="!isLoggedIn">
+    <button mat-button routerLink="/">Home</button>
+    <button mat-button routerLink="/auth">Login</button>
+  </ng-container>
+
+  <!-- Logged in -->
+  <ng-container *ngIf="isLoggedIn">
+    <button mat-button routerLink="/dashboard">Dashboard</button>
+
+    <!-- Profile Menu -->
+    <button mat-icon-button [matMenuTriggerFor]="profileMenu">
+      <mat-icon>account_circle</mat-icon>
+    </button>
+
+    <mat-menu #profileMenu="matMenu" xPosition="before">
+      <div class="profile-header">
+        <mat-icon class="profile-avatar">person</mat-icon>
+        <div class="profile-info">
+          <div class="profile-name">{{ userName }}</div>
+          <div class="profile-role">Student</div>
+        </div>
+      </div>
+      <mat-divider></mat-divider>
+      <button mat-menu-item routerLink="/results">
+        <mat-icon>bar_chart</mat-icon>
+        <span>Results</span>
+      </button>
+      <button mat-menu-item (click)="logout()">
+        <mat-icon>logout</mat-icon>
+        <span>Logout</span>
+      </button>
+    </mat-menu>
+  </ng-container>
+</mat-toolbar>
