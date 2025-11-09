@@ -3,7 +3,11 @@
 
   <ng-container *ngIf="results.length; else noResults">
     <div class="results-list">
-      <mat-card *ngFor="let r of results" class="result-card">
+      <mat-card
+        *ngFor="let r of results"
+        class="result-card"
+        (click)="viewAnalysis(r)"
+      >
         <h3>{{ r.examTitle }}</h3>
         <p><strong>Score:</strong> {{ r.totalScore }} / 720</p>
         <p><strong>Date:</strong> {{ r.submittedAt }}</p>

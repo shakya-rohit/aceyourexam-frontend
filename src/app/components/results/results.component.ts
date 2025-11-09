@@ -26,7 +26,6 @@ export class ResultsComponent implements OnInit {
 
     const parsedUser = JSON.parse(user);
 
-    // Try to load the most recent result (from submission)
     const lastResult = localStorage.getItem('LAST_RESULT');
     if (lastResult) {
       const res = JSON.parse(lastResult);
@@ -34,17 +33,16 @@ export class ResultsComponent implements OnInit {
         {
           examTitle: res.examTitle || 'Recent Exam',
           totalScore: res.totalScore,
-          submittedAt: new Date().toLocaleString()
+          submittedAt: new Date().toLocaleString(),
+          attemptId: res.attemptId || null
         }
       ];
-
-      // Clear it so it doesn’t persist forever
       localStorage.removeItem('LAST_RESULT');
     } else {
-      // Fetch all results from backend
       this.api.getResultsByStudent(parsedUser.id).subscribe({
         next: (res) => {
           this.results = res.map((r: any) => ({
+            attemptId: r.id,
             examTitle: r.exam?.title || 'Untitled Exam',
             totalScore: r.totalScore,
             submittedAt: new Date(r.submittedAt).toLocaleString()
@@ -67,5 +65,14 @@ export class ResultsComponent implements OnInit {
 
   goToDashboard() {
     this.router.navigate(['/dashboard']);
+  }
+
+  // ✅ Navigate to the detailed analysis page
+  viewAnalysis(result: any) {
+    if (result.attemptId) {
+      this.router.navigate(['/analysis', result.attemptId]);
+    } else {
+      alert('No detailed data available for this attempt.');
+    }
   }
 }

@@ -37,6 +37,12 @@ export const routes: Routes = [
     data: { preload: true }  // ✅ Preload this
   },
   {
+    path: 'analysis/:attemptId',
+    loadComponent: () =>
+      import('./components/analysis/analysis.component').then((m) => m.AnalysisComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: '**',
     redirectTo: ''
   }

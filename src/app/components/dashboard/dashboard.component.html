@@ -1,7 +1,47 @@
 <div class="dashboard-container">
   <h2>Welcome, {{ user?.name || 'Student' }} 👋</h2>
-  <p>Here are your available exams:</p>
 
+  <!-- ---------- SUMMARY CARDS ---------- -->
+  <div class="stats-section">
+    <mat-card class="stat-card">
+      <h3>{{ totalExams }}</h3>
+      <p>Total Exams Taken</p>
+    </mat-card>
+    <mat-card class="stat-card">
+      <h3>{{ averageScore }}</h3>
+      <p>Average Score</p>
+    </mat-card>
+    <mat-card class="stat-card">
+      <h3>{{ bestScore }}</h3>
+      <p>Best Score</p>
+    </mat-card>
+  </div>
+
+  <!-- ---------- PERFORMANCE CHART ---------- -->
+  <div class="chart-section" *ngIf="results.length">
+    <h3 class="chart-title">Performance Over Time</h3>
+    <div class="chart-wrapper">
+      <canvas
+        baseChart
+        [data]="lineChartData"
+        [options]="lineChartOptions"
+        [type]="'line'">
+      </canvas>
+    </div>
+  </div>
+
+  <!-- ---------- RECOMMENDATIONS ---------- -->
+  <div class="recommendations" *ngIf="recommendations.length">
+    <h3>Recommendations for You</h3>
+    <ul>
+      <li *ngFor="let rec of recommendations">{{ rec }}</li>
+    </ul>
+  </div>
+
+  <mat-divider style="margin: 2rem 0;"></mat-divider>
+
+  <!-- ---------- EXAMS ---------- -->
+  <h3>Available Exams</h3>
   <div class="exam-list">
     <mat-card *ngFor="let exam of exams" class="exam-card">
       <h3>{{ exam.title }}</h3>
@@ -13,6 +53,7 @@
 
   <mat-divider style="margin: 2rem 0;"></mat-divider>
 
+  <!-- ---------- RESULTS ---------- -->
   <div class="results-section">
     <h3>Your Past Results</h3>
 
@@ -29,9 +70,5 @@
     <ng-template #noResults>
       <p>No past results yet. Take a test to see them here!</p>
     </ng-template>
-  </div>
-
-  <div style="margin-top: 2rem; text-align: center;">
-    <button mat-stroked-button color="warn" (click)="logout()">Logout</button>
   </div>
 </div>

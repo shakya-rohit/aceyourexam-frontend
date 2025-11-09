@@ -13,7 +13,7 @@ export class ApiService {
   private loginStatus = new BehaviorSubject<boolean>(!!localStorage.getItem('AYE_TOKEN'));
   loginStatus$ = this.loginStatus.asObservable();
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   // ---------- AUTH ----------
   register(data: any): Observable<any> {
@@ -55,6 +55,12 @@ export class ApiService {
 
   submitResult(payload: any): Observable<any> {
     return this.http.post(`${this.baseUrl}/results`, payload, {
+      headers: this.getAuthHeaders()
+    });
+  }
+
+  getAttemptById(id: number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/attempts/${id}`, {
       headers: this.getAuthHeaders()
     });
   }
