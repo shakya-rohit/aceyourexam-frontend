@@ -21,9 +21,15 @@ export class ExamComponent implements OnInit, OnDestroy {
   questions: any[] = [];
   currentIndex = 0;
   selectedAnswers: { [key: number]: number } = {};
+
+  // ⏱️ Timer for exam duration
   timeLeft = 0;
   formattedTime = '00:00';
   timerSub?: Subscription;
+
+  // 🕒 Per-question time tracking
+  questionStartTime = 0;
+  timeSpent: { [questionId: number]: number } = {};
 
   constructor(private api: ApiService, private router: Router) {}
 
@@ -60,11 +66,15 @@ export class ExamComponent implements OnInit, OnDestroy {
   fetchQuestions() {
     this.api.getQuestionsByExam(this.exam.id).subscribe({
       next: (res) => {
-        // Split options by ||
         this.questions = res.map((q: any) => ({
           ...q,
           options: q.options.split('||')
         }));
+
+        // ⏱️ Start tracking the first question
+        if (this.questions.length > 0) {
+          this.questionStartTime = Date.now();
+        }
       },
       error: (err) => {
         console.error('Error fetching questions', err);
@@ -74,11 +84,31 @@ export class ExamComponent implements OnInit, OnDestroy {
   }
 
   nextQuestion() {
-    if (this.currentIndex < this.questions.length - 1) this.currentIndex++;
+    if (this.currentIndex < this.questions.length - 1) {
+      this.recordTimeForCurrentQuestion();
+      this.currentIndex++;
+      this.questionStartTime = Date.now();
+    }
   }
 
   prevQuestion() {
-    if (this.currentIndex > 0) this.currentIndex--;
+    if (this.currentIndex > 0) {
+      this.recordTimeForCurrentQuestion();
+      this.currentIndex--;
+      this.questionStartTime = Date.now();
+    }
+  }
+
+  // ⏱️ Record how long the user viewed the current question
+  recordTimeForCurrentQuestion() {
+    const currentQuestion = this.questions[this.currentIndex];
+    if (!currentQuestion || !this.questionStartTime) return;
+
+    const now = Date.now();
+    const secondsSpent = Math.floor((now - this.questionStartTime) / 1000);
+    const qId = currentQuestion.id;
+
+    this.timeSpent[qId] = (this.timeSpent[qId] || 0) + secondsSpent;
   }
 
   selectOption(questionId: number, optionIndex: number) {
@@ -88,9 +118,14 @@ export class ExamComponent implements OnInit, OnDestroy {
   submitExam() {
     if (!confirm('Are you sure you want to submit the exam?')) return;
 
-    const answers = Object.keys(this.selectedAnswers).map((qId) => ({
-      questionId: Number(qId),
-      selectedOptionIndex: this.selectedAnswers[Number(qId)]
+    // 🕒 Record time for the last question before submission
+    this.recordTimeForCurrentQuestion();
+
+    // Prepare payload
+    const answers = this.questions.map((q) => ({
+      questionId: q.id,
+      selectedOptionIndex: this.selectedAnswers[q.id] ?? null,
+      timeSpent: this.timeSpent[q.id] || 0 // ⏱️ Added field
     }));
 
     this.api.submitExam(this.exam.id, { answers }).subscribe({
@@ -108,5 +143,7 @@ export class ExamComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.timerSub?.unsubscribe();
+    // Ensure last question time is saved even if user leaves mid-exam
+    this.recordTimeForCurrentQuestion();
   }
 }

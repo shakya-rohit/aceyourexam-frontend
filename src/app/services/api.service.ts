@@ -7,7 +7,7 @@ import { environment } from '../../environments/environment';
   providedIn: 'root'
 })
 export class ApiService {
-  private baseUrl = 'http://localhost:8080/api'; // you can swap to environment.apiBaseUrl
+  private baseUrl = environment.apiBaseUrl;
 
   // ✅ Track login status across the app
   private loginStatus = new BehaviorSubject<boolean>(!!localStorage.getItem('AYE_TOKEN'));
@@ -91,4 +91,9 @@ export class ApiService {
       headers: this.getAuthHeaders()
     });
   }
+
+  googleLogin(data: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/auth/google-login`, data);
+  }
+
 }

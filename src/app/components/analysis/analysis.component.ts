@@ -20,7 +20,7 @@ export class AnalysisComponent implements OnInit {
   pieChartData!: ChartConfiguration<'doughnut'>['data'];
   barChartData!: ChartConfiguration<'bar'>['data'];
 
-  constructor(private route: ActivatedRoute, private api: ApiService, private router: Router) {}
+  constructor(private route: ActivatedRoute, private api: ApiService, private router: Router) { }
 
   ngOnInit(): void {
     this.attemptId = +this.route.snapshot.paramMap.get('attemptId')!;
@@ -30,15 +30,31 @@ export class AnalysisComponent implements OnInit {
   loadAttemptDetails() {
     this.api.getAttemptById(this.attemptId).subscribe({
       next: (res) => {
-        this.attemptData = res;
-        this.prepareCharts(res);
+        this.attemptData = {
+          ...res,
+          totalQuestions: res.questions?.length || 0,
+          skippedCount: this.calculateSkipped(res),
+          accuracy: res.accuracy || this.calculateAccuracy(res)
+        };
+        this.prepareCharts(this.attemptData);
       },
       error: (err) => console.error('Error loading attempt', err)
     });
   }
 
+  calculateSkipped(res: any): number {
+    const answered = (res.questions || []).filter((q: any) => q.selectedOptionIndex !== null && q.selectedOptionIndex !== undefined).length;
+    return (res.questions?.length || 0) - answered;
+  }
+
+  calculateAccuracy(res: any): number {
+    if (!res.questions?.length) return 0;
+    const correct = (res.questions || []).filter((q: any) => q.isCorrect).length;
+    return (correct / res.questions.length) * 100;
+  }
+
   prepareCharts(data: any) {
-    // Pie chart: correct vs incorrect vs skipped
+    // 🍩 Overall Accuracy (same as before)
     this.pieChartData = {
       labels: ['Correct', 'Incorrect', 'Skipped'],
       datasets: [
@@ -49,14 +65,34 @@ export class AnalysisComponent implements OnInit {
       ]
     };
 
-    // Bar chart: section-wise performance
+    // 📘 Subject-wise performance (computed dynamically)
+    const subjectStats: { [key: string]: { correct: number; total: number } } = {};
+
+    (data.questions || []).forEach((q: any) => {
+      const subject = q.subject || 'General'; // fallback if subject missing
+      if (!subjectStats[subject]) subjectStats[subject] = { correct: 0, total: 0 };
+      subjectStats[subject].total++;
+      if (q.isCorrect) subjectStats[subject].correct++;
+    });
+
+    const subjects = Object.keys(subjectStats);
+    const correctCounts = subjects.map((s) => subjectStats[s].correct);
+    const accuracies = subjects.map((s) =>
+      Math.round((subjectStats[s].correct / subjectStats[s].total) * 100)
+    );
+
     this.barChartData = {
-      labels: ['Physics', 'Chemistry', 'Biology'],
+      labels: subjects,
       datasets: [
         {
-          label: 'Score by Subject',
-          data: [data.physicsScore, data.chemistryScore, data.biologyScore],
-          backgroundColor: ['#3F51B5', '#00BCD4', '#8BC34A']
+          label: 'Correct Answers',
+          data: correctCounts,
+          backgroundColor: '#3F51B5'
+        },
+        {
+          label: 'Accuracy (%)',
+          data: accuracies,
+          backgroundColor: '#FFC107'
         }
       ]
     };
@@ -65,4 +101,23 @@ export class AnalysisComponent implements OnInit {
   backToResults() {
     this.router.navigate(['/results']);
   }
+
+  barChartOptions: ChartConfiguration<'bar'>['options'] = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top',
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Count / Accuracy (%)',
+        },
+      },
+    },
+  };
+
 }

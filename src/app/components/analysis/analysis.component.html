@@ -3,6 +3,26 @@
   <p><b>Date:</b> {{ attemptData?.submittedAt | date:'medium' }}</p>
   <p><b>Score:</b> {{ attemptData?.totalScore }} / 720</p>
 
+  <!-- 📊 Stats Summary Section -->
+  <div class="stats-section" *ngIf="attemptData">
+    <div class="stat-card">
+      <h4>Total Questions</h4>
+      <p>{{ attemptData?.totalQuestions || attemptData?.questions?.length || 0 }}</p>
+    </div>
+    <div class="stat-card correct">
+      <h4>Correct</h4>
+      <p>{{ attemptData?.correctCount }}</p>
+    </div>
+    <div class="stat-card incorrect">
+      <h4>Incorrect</h4>
+      <p>{{ attemptData?.wrongCount }}</p>
+    </div>
+    <div class="stat-card">
+      <h4>Accuracy</h4>
+      <p>{{ attemptData?.accuracy | number:'1.0-2' }}%</p>
+    </div>
+  </div>
+
   <div class="charts-section">
     <div class="chart-card">
       <h3>Overall Accuracy</h3>
@@ -11,7 +31,7 @@
 
     <div class="chart-card">
       <h3>Subject-wise Performance</h3>
-      <canvas baseChart [data]="barChartData" [type]="'bar'"></canvas>
+      <canvas baseChart [data]="barChartData" [options]="barChartOptions" [type]="'bar'"></canvas>
     </div>
   </div>
 
@@ -25,17 +45,23 @@
           <th>Your Answer</th>
           <th>Correct Answer</th>
           <th>Status</th>
+          <th>Time Spent</th> <!-- ⏱️ Added -->
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let q of attemptData?.questions; index as i">
           <td>{{ i + 1 }}</td>
           <td>{{ q.questionText }}</td>
-          <td>{{ q.selectedOptionIndex || '-' }}</td>
+          <td>{{ q.selectedOptionIndex !== null && q.selectedOptionIndex !== undefined ? q.selectedOptionIndex : '-' }}</td>
           <td>{{ q.correctOptionIndex }}</td>
-          <td [class.correct]="q.isCorrect" [class.incorrect]="!q.isCorrect">
+          <td *ngIf="q.selectedOptionIndex === null || q.selectedOptionIndex === undefined" class="skipped">
+            ⏩ Skipped
+          </td>
+          <td *ngIf="q.selectedOptionIndex !== null && q.selectedOptionIndex !== undefined"
+              [class.correct]="q.isCorrect" [class.incorrect]="!q.isCorrect">
             {{ q.isCorrect ? '✔️' : '❌' }}
           </td>
+          <td>{{ q.timeSpent ? q.timeSpent + 's' : '--' }}</td> <!-- ⏱️ Added fallback -->
         </tr>
       </tbody>
     </table>
