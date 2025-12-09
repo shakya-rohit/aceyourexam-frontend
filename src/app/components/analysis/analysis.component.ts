@@ -120,4 +120,8 @@ export class AnalysisComponent implements OnInit {
     },
   };
 
+  pieChartOptions: ChartConfiguration<'doughnut'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+  };
 }

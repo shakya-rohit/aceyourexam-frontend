@@ -1,0 +1,154 @@
+<ng-container *ngIf="!isLoading; else loadingTpl">
+  <div class="profile-settings-wrap">
+    <!-- LEFT NAV -->
+    <mat-card class="left-nav">
+      <!-- compact left-top (only avatar, name, email) -->
+      <div class="left-top compact">
+        <div class="avatar-mini">
+          <!-- image if present, otherwise initials -->
+          <img *ngIf="avatarPreview; else initialsMini" [src]="avatarPreview" class="avatar-mini-img" />
+          <ng-template #initialsMini>
+            <div class="avatar-mini-initials">{{ initials }}</div>
+          </ng-template>
+        </div>
+
+        <div class="left-user">
+          <div class="left-name">{{ user.name }}</div>
+          <div class="left-email">{{ user.email }}</div>
+        </div>
+      </div>
+
+      <mat-nav-list>
+        <mat-list-item (click)="select('profile')" [class.active]="active==='profile'">
+          <mat-icon matListIcon>person</mat-icon>
+          <h4 matLine>Profile</h4>
+          <p matLine class="muted">Overview & avatar</p>
+        </mat-list-item>
+
+        <mat-list-item (click)="select('account')" [class.active]="active==='account'">
+          <mat-icon matListIcon>settings</mat-icon>
+          <h4 matLine>Account</h4>
+          <p matLine class="muted">Name & email</p>
+        </mat-list-item>
+
+        <mat-list-item (click)="select('security')" [class.active]="active==='security'">
+          <mat-icon matListIcon>lock</mat-icon>
+          <h4 matLine>Security</h4>
+          <p matLine class="muted">Change password</p>
+        </mat-list-item>
+
+        <mat-list-item (click)="select('danger')" [class.active]="active==='danger'">
+          <mat-icon matListIcon color="warn">dangerous</mat-icon>
+          <h4 matLine>Danger Zone</h4>
+          <p matLine class="muted">Delete account</p>
+        </mat-list-item>
+      </mat-nav-list>
+    </mat-card>
+
+    <!-- RIGHT PANEL -->
+    <mat-card class="right-panel">
+      <ng-container [ngSwitch]="active">
+
+        <!-- PROFILE -->
+        <div *ngSwitchCase="'profile'">
+          <h2>Profile</h2>
+          <p class="subtitle">Personal information and avatar</p>
+
+          <div class="profile-overview">
+            <div class="info-left">
+              <h3>{{ user.name }}</h3>
+              <div class="muted">{{ user.email }}</div>
+              <div class="meta-row">
+                <span class="role-badge">{{ user.role }}</span>
+                <span class="joined-small">{{ joinedText }}</span>
+              </div>
+            </div>
+
+            <!-- Avatar + Actions (stacked vertically for better balance) -->
+<div class="avatar-panel avatar-panel-vertical">
+  <div class="avatar-large-wrap">
+    <img *ngIf="avatarPreview; else initialsLarge" [src]="avatarPreview" class="avatar-large" />
+    <ng-template #initialsLarge>
+      <div class="avatar-large-initials">{{ initials }}</div>
+    </ng-template>
+  </div>
+
+  <!-- single-line actions (stacked) -->
+  <input #fileInputProfile style="display:none" type="file" accept="image/*" (change)="onAvatarChange($event)" />
+  <button mat-stroked-button class="change-photo-btn" (click)="fileInputProfile.click()">Change photo</button>
+  <button mat-button *ngIf="avatarPreview" (click)="removeAvatar()">Remove</button>
+  <div class="avatar-help">Recommended: 256×256, PNG/JPG</div>
+</div>
+
+          </div>
+
+          <!-- stats -->
+          <div class="stats-row" style="margin-top:18px;">
+            <div class="stat-card">
+              <div class="big">{{ stats.examsTaken }}</div>
+              <div class="small">Exams</div>
+            </div>
+            <div class="stat-card">
+              <div class="big">{{ stats.avgScore }}%</div>
+              <div class="small">Avg Score</div>
+            </div>
+            <div class="stat-card">
+              <div class="big">{{ stats.lastActive | date:'short' }}</div>
+              <div class="small">Last Active</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACCOUNT -->
+        <div *ngSwitchCase="'account'">
+          <h2>Account</h2>
+          <p class="subtitle">Update your account details</p>
+          <form [formGroup]="editForm" (ngSubmit)="saveProfile()">
+            <mat-form-field appearance="fill" class="full">
+              <mat-label>Name</mat-label>
+              <input matInput formControlName="name" />
+              <mat-error *ngIf="editForm.controls['name'].invalid">Name is required</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="fill" class="full">
+              <mat-label>Email</mat-label>
+              <input matInput formControlName="email" />
+            </mat-form-field>
+
+            <div class="action-buttons">
+              <button mat-raised-button color="primary" type="submit" [disabled]="editForm.invalid">Save changes</button>
+              <button mat-button type="button" (click)="loadProfile()">Cancel</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- SECURITY -->
+        <div *ngSwitchCase="'security'">
+          <h2>Security</h2>
+          <p class="subtitle">Password and authentication</p>
+          <button mat-raised-button color="accent" (click)="openChangePassword()">Change password</button>
+        </div>
+
+        <!-- DANGER -->
+        <div *ngSwitchCase="'danger'">
+          <h2>Danger Zone</h2>
+          <p class="subtitle">Irreversible actions</p>
+          <mat-card class="danger-card">
+            <h3>Delete account</h3>
+            <p class="muted">This action will permanently remove your account and data.</p>
+            <div class="action-buttons">
+              <button mat-stroked-button color="warn" (click)="confirmDelete()">Delete my account</button>
+            </div>
+          </mat-card>
+        </div>
+
+      </ng-container>
+    </mat-card>
+  </div>
+</ng-container>
+
+<ng-template #loadingTpl>
+  <div class="loading">
+    <mat-progress-spinner diameter="48" mode="indeterminate"></mat-progress-spinner>
+  </div>
+</ng-template>

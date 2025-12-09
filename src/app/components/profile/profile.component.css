@@ -1,0 +1,201 @@
+/* ---------- PAGE LAYOUT ---------- */
+.profile-settings-wrap{
+  display:flex;
+  gap:32px;
+  max-width:1200px;
+  margin:28px 56px;
+  padding:0 8px;
+  align-items:flex-start;
+  justify-content:flex-start;
+  min-height:320px;
+}
+
+/* ---------- LEFT NAV (sticky column) ---------- */
+.left-nav{
+  width:300px;
+  padding:18px;
+  box-shadow: 0 10px 30px rgba(16,24,40,0.06);
+  border-radius:12px;
+  position:sticky;
+  top:72px;
+  align-self:flex-start;
+  background:#fff;
+}
+
+/* left-top compact (only avatar, name, email) */
+.left-top.compact {
+  display:flex;
+  gap:10px;
+  align-items:center;
+  margin-bottom:12px;
+  padding-bottom:4px;
+}
+
+/* small avatar container */
+.avatar-mini {
+  width:48px;
+  height:48px;
+  border-radius:50%;
+  background:#f3f4f6;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+}
+
+/* image fallback */
+.avatar-mini-img {
+  width:48px;
+  height:48px;
+  border-radius:50%;
+  object-fit:cover;
+  border:1px solid rgba(0,0,0,0.05);
+}
+
+/* initials fallback (small) */
+.avatar-mini-initials {
+  font-weight:700;
+  color:#1f2937;
+  font-size:16px;
+  letter-spacing:0.6px;
+}
+
+/* large avatar in right panel (image) */
+.avatar-large-wrap { width:110px; height:110px; display:flex; align-items:center; justify-content:center; border-radius:12px; }
+.avatar-large {
+  width:110px; height:110px; border-radius:50%; object-fit:cover;
+  border:3px solid rgba(63,81,181,0.08);
+  box-shadow: 0 8px 22px rgba(16,24,40,0.06);
+}
+
+/* initials fallback (large) */
+.avatar-large-initials {
+  width:110px;
+  height:110px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(99,102,241,0.04));
+  color:#2c3eaa;
+  font-weight:700;
+  font-size:36px;
+  letter-spacing:1px;
+  border:3px solid rgba(63,81,181,0.06);
+}
+
+/* avatar actions in right panel */
+.avatar-panel {
+  display:flex;
+  gap:18px;
+  align-items:center;
+  justify-content:flex-end;
+}
+.avatar-actions-panel { display:flex; flex-direction:column; gap:8px; align-items:flex-start; }
+.avatar-actions-panel button { min-width:120px; }
+.avatar-help { color:#888; font-size:0.82rem; margin-top:4px; }
+
+/* stacked avatar area (small, safe changes) */
+.avatar-panel-vertical {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+  justify-content:flex-start;
+  margin-top: -6px; /* pulls avatar block slightly closer to the profile text */
+}
+
+/* make the change-photo button more visually connected to the avatar */
+.change-photo-btn {
+  min-width:140px;
+  margin-top:6px;
+}
+
+/* left user text */
+.left-user .left-name{ font-weight:600; font-size:1rem; line-height:1.1; margin-bottom:2px; }
+.left-user .left-email{ color:#555; font-size:0.85rem; margin-top:0; }
+
+/* ---------- NAV LIST (fix squashed lines) ---------- */
+mat-nav-list { padding: 6px 0; }
+mat-list-item {
+  padding:12px 10px;
+  border-radius:8px;
+  align-items:flex-start !important;
+  cursor:pointer;
+  transition: background .12s ease;
+}
+mat-list-item .mat-line { display:block; line-height:1.2; }
+mat-list-item .muted { color:#8b8b8b; font-size:0.82rem; margin-top:4px; }
+mat-list-item:hover { background: rgba(63,81,181,0.03); }
+
+/* active nav state */
+mat-list-item.active{ background: rgba(63,81,181,0.06); box-shadow: inset 0 0 0 1px rgba(63,81,181,0.02); }
+
+/* ---------- RIGHT PANEL (make it more prominent) ---------- */
+.right-panel{
+  flex:1;
+  min-width:640px;
+  padding:28px;
+  border-radius:12px;
+  box-shadow: 0 12px 36px rgba(16,24,40,0.05);
+  min-height:260px;
+  background:#fff;
+}
+
+/* section title & subtitle */
+.right-panel h2{ margin:0 0 6px 0; font-size:1.4rem; }
+.subtitle{ color:#666; margin-top:4px; margin-bottom:16px; }
+
+/* profile overview (left + right area inside right panel) */
+.profile-overview{
+  display:flex;
+  justify-content:space-between;
+  gap:20px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.info-left h3{ margin:0; font-size:1.2rem; }
+.info-left .muted{ color:#666; margin-top:6px; }
+
+/* stats */
+.stats-row{ display:flex; gap:14px; align-items:center; margin-top:10px; flex-wrap:wrap; }
+.stat-card{
+  min-width:150px;
+  border-radius:10px;
+  border:1px dashed #efefef;
+  padding:14px;
+  text-align:center;
+  background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(250,250,250,0.7));
+  box-shadow: 0 6px 14px rgba(16,24,40,0.03);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.stat-card:hover{ transform: translateY(-4px); box-shadow: 0 14px 28px rgba(16,24,40,0.06); }
+
+/* text sizes */
+.big{ font-weight:700; font-size:1.12rem; }
+.small{ color:#666; font-size:0.82rem; }
+
+/* forms */
+.full{ width:100%; }
+.action-buttons{ margin-top:18px; display:flex; gap:12px; justify-content:flex-start; align-items:center; }
+
+/* danger block */
+.danger-card{ border:1px solid rgba(244,67,54,0.12); background: rgba(255,235,238,0.02); padding:14px; border-radius:8px; }
+
+/* loading */
+.loading{ text-align:center; padding:2rem; }
+
+/* ---------- RESPONSIVE TWEAKS ---------- */
+@media (max-width:1100px){
+  .profile-settings-wrap{ max-width:920px; margin:22px 20px; gap:20px; }
+  .left-nav{ width:260px; top:68px; }
+  .right-panel{ padding:22px; min-width:520px; }
+}
+@media (max-width:900px){
+  .profile-settings-wrap{ flex-direction:column; max-width:720px; margin:16px 12px; gap:16px; }
+  .left-nav{ width:100%; position:relative; top:auto; }
+  .avatar-mini-img, .avatar-mini-initials { width:64px; height:64px; border-radius:50%; }
+  .avatar-large { width:90px; height:90px; }
+  .avatar-large-initials { width:90px; height:90px; font-size:28px; }
+  .right-panel{ min-width:auto; padding:18px; }
+}

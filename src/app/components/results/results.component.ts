@@ -43,7 +43,7 @@ export class ResultsComponent implements OnInit {
         next: (res) => {
           this.results = res.map((r: any) => ({
             attemptId: r.id,
-            examTitle: r.exam?.title || 'Untitled Exam',
+            examTitle: r.examTitle || 'Untitled Exam',
             totalScore: r.totalScore,
             submittedAt: new Date(r.submittedAt).toLocaleString()
           }));

@@ -98,7 +98,7 @@ export class DashboardComponent implements OnInit {
     this.api.getResultsByStudent(userId).subscribe({
       next: (res) => {
         this.results = res.map((r: any) => ({
-          examTitle: r.exam?.title,
+          examTitle: r.examTitle || 'unknown title',
           totalScore: r.totalScore,
           submittedAt: new Date(r.submittedAt).toLocaleString()
         }));

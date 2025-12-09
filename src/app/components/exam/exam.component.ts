@@ -68,7 +68,7 @@ export class ExamComponent implements OnInit, OnDestroy {
       next: (res) => {
         this.questions = res.map((q: any) => ({
           ...q,
-          options: q.options.split('||')
+          options: q.optionList
         }));
 
         // ⏱️ Start tracking the first question

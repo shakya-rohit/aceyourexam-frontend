@@ -6,6 +6,7 @@ import { ExamComponent } from './components/exam/exam.component';
 import { ResultsComponent } from './components/results/results.component';
 import { authGuard } from './guards/auth.guard';
 import { authRedirectGuard } from './guards/auth-redirect.guard';
+import { ProfileComponent } from './components/profile/profile.component';
 
 export const routes: Routes = [
   {
@@ -40,6 +41,11 @@ export const routes: Routes = [
     path: 'analysis/:attemptId',
     loadComponent: () =>
       import('./components/analysis/analysis.component').then((m) => m.AnalysisComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'profile',
+    loadComponent: () => import('./components/profile/profile.component').then(m => m.ProfileComponent),
     canActivate: [authGuard]
   },
   {
