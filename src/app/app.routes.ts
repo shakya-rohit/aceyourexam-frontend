@@ -27,7 +27,7 @@ export const routes: Routes = [
     path: 'exam',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./components/exam/exam.component').then(m => m.ExamComponent),
+      import('./components/exam-runner/exam-runner.component').then(m => m.ExamRunnerComponent),
     data: { preload: true }  // ✅ Preload this
   },
   {
