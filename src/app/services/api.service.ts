@@ -56,26 +56,26 @@ export class ApiService {
 
   // ---------- RESULTS ----------
   getResults(userEmail: string): Observable<any> {
-    return this.http.get(`${this.baseUrl}/results?email=${userEmail}`, {
+    return this.http.get(`${this.baseUrl}/student/results?email=${userEmail}`, {
       headers: this.getAuthHeaders()
     });
   }
 
   submitResult(payload: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/results`, payload, {
+    return this.http.post(`${this.baseUrl}/student/results`, payload, {
       headers: this.getAuthHeaders()
     });
   }
 
   getAttemptById(id: number): Observable<any> {
-    return this.http.get(`${this.baseUrl}/attempts/${id}`, {
+    return this.http.get(`${this.baseUrl}/student/attempts/${id}`, {
       headers: this.getAuthHeaders()
     });
   }
 
   // ---------- DASHBOARD ----------
   getResultsByStudent(studentId: number): Observable<any> {
-    return this.http.get(`${this.baseUrl}/attempts/student/${studentId}`, {
+    return this.http.get(`${this.baseUrl}/student/attempts/student/${studentId}`, {
       headers: this.getAuthHeaders()
     });
   }
@@ -95,7 +95,7 @@ export class ApiService {
   }
 
   submitExam(examId: number, payload: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/attempts/submit/${examId}`, payload, {
+    return this.http.post(`${this.baseUrl}/student/attempts/submit/${examId}`, payload, {
       headers: this.getAuthHeaders()
     });
   }
@@ -131,7 +131,7 @@ export class ApiService {
         createdAt: new Date().toISOString()
       });
     }
-    return this.http.get<Profile>(`${this.baseUrl}/auth/me/${encodeURIComponent(email)}`, {
+    return this.http.get<Profile>(`${this.baseUrl}/student/auth/me/${encodeURIComponent(email)}`, {
       headers: this.getAuthHeaders()
     }).pipe(
       // do not swallow errors here; let caller decide — but add a small catch to turn 404 into dummy
@@ -148,9 +148,8 @@ export class ApiService {
   }
 
   // update editable fields
-  updateProfile(payload: { name?: string; /* other editable fields */ }): Observable<Partial<Profile>> {
-    // many backends expect PUT /auth/me
-    return this.http.put<Partial<Profile>>(`${this.baseUrl}/auth/me`, payload, {
+  updateProfile(payload: { name?: string; }): Observable<Partial<Profile>> {
+    return this.http.put<Partial<Profile>>(`${this.baseUrl}/student/auth/me`, payload, {
       headers: this.getAuthHeaders()
     }).pipe(
       catchError(err => {
@@ -162,7 +161,7 @@ export class ApiService {
   }
 
   changePassword(payload: any): Observable<any> {
-    return this.http.post<any>(`${this.baseUrl}/auth/change-password`, payload, {
+    return this.http.post<any>(`${this.baseUrl}/student/auth/change-password`, payload, {
       headers: this.getAuthHeaders()
     }).pipe(
       catchError(err => {
@@ -174,7 +173,7 @@ export class ApiService {
 
   // Upload avatar (multipart/form-data)
   uploadAvatar(fd: FormData): Observable<any> {
-    return this.http.post(`${this.baseUrl}/auth/me/avatar`, fd, {
+    return this.http.post(`${this.baseUrl}/student/auth/me/avatar`, fd, {
       headers: this.getAuthHeaders()
       // do NOT set Content-Type; browser will add boundary
     }).pipe(
@@ -188,7 +187,7 @@ export class ApiService {
 
   // delete avatar
   deleteAvatar(): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/auth/me/avatar`, {
+    return this.http.delete(`${this.baseUrl}/student/auth/me/avatar`, {
       headers: this.getAuthHeaders()
     }).pipe(
       catchError(err => {
@@ -200,7 +199,7 @@ export class ApiService {
 
   // delete account
   deleteAccount(): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/auth/me`, {
+    return this.http.delete(`${this.baseUrl}/student/auth/me`, {
       headers: this.getAuthHeaders()
     }).pipe(
       catchError(err => {
@@ -215,7 +214,7 @@ export class ApiService {
     if (!userEmail) {
       return of({ examsTaken: 0, avgScore: 0, lastActive: new Date().toISOString() });
     }
-    return this.http.get<any>(`${this.baseUrl}/stats/user?email=${encodeURIComponent(userEmail)}`, { headers: this.getAuthHeaders() })
+    return this.http.get<any>(`${this.baseUrl}/student/stats/user?email=${encodeURIComponent(userEmail)}`, { headers: this.getAuthHeaders() })
       .pipe(catchError(err => {
         console.warn('getUserStats failed, fallback to dummy', err);
         return of({ examsTaken: 3, avgScore: 78, lastActive: new Date().toISOString() });

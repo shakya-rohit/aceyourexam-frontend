@@ -118,7 +118,19 @@ export class ProfileComponent implements OnInit {
 
   saveProfile() {
     if (this.editForm.invalid) return;
-    const payload = { name: this.editForm.value.name };
+    var email;
+    const userData = localStorage.getItem('AYE_USER');
+      if (userData) {
+        try {
+          const parsed = JSON.parse(userData);
+          email = parsed.email;
+        } catch {
+          console.error("Wrong user data", userData);
+          return;
+        }
+      }
+      
+    const payload = { name: this.editForm.value.name, email: email };
     this.api.updateProfile(payload).subscribe({
       next: (res) => {
         this.user = { ...this.user, ...res };
@@ -164,8 +176,16 @@ export class ProfileComponent implements OnInit {
     // keep your dialog implementation or existing dialog component
     const ref = this.dialog.open(ChangePasswordDialog, { width: '420px' });
     ref.afterClosed().subscribe(result => {
-      if (result?.success) this.snack.open('Password changed', 'OK', { duration: 2000 });
+      if (result?.success){
+        this.snack.open('Password changed', 'OK', { duration: 2000 });
+        this.logout();
+      }
     });
+  }
+
+  logout(): void {
+    this.api.logout();
+    this.router.navigate(['/']);
   }
 
   confirmDelete() {
@@ -226,7 +246,20 @@ export class ChangePasswordDialog {
       this.snack.open('Passwords do not match', 'OK', { duration: 2000 });
       return;
     }
-    const payload = { currentPassword: this.form.value.current, newPassword: this.form.value.newp };
+
+    var email;
+    const userData = localStorage.getItem('AYE_USER');
+      if (userData) {
+        try {
+          const parsed = JSON.parse(userData);
+          email = parsed.email;
+        } catch {
+          console.error("Wrong user data", userData);
+          return;
+        }
+      }
+
+    const payload = { email: email, currentPassword: this.form.value.current, newPassword: this.form.value.newp };
     this.api.changePassword(payload).subscribe({
       next: () => { this.dialogRef.close({ success: true }); },
       error: (e) => { console.error(e); this.snack.open('Change failed', 'OK', { duration: 3000 }); }
