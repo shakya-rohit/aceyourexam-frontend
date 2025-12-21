@@ -1,47 +1,39 @@
 <div class="auth-container">
   <mat-card class="auth-card">
-    <mat-tab-group>
+    <mat-tab-group (selectedTabChange)="onTabChange($event)" [preserveContent]="true">
+
       <!-- Login Tab -->
       <mat-tab label="Login">
-        <form (ngSubmit)="login()" style="margin-top: 1rem;">
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Email</mat-label>
-            <input matInput type="email" [(ngModel)]="loginEmail" name="loginEmail" required />
-          </mat-form-field>
+        <ng-template matTabContent>
+          <form (ngSubmit)="login()" style="margin-top: 1rem;">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Email</mat-label>
+              <input matInput type="email" [(ngModel)]="loginEmail" name="loginEmail" required />
+            </mat-form-field>
 
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Password</mat-label>
-            <input matInput type="password" [(ngModel)]="loginPassword" name="loginPassword" required />
-          </mat-form-field>
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Password</mat-label>
+              <input matInput type="password" [(ngModel)]="loginPassword" name="loginPassword" required />
+            </mat-form-field>
 
-          <button mat-raised-button color="primary" class="full-width" type="submit">
-            Login
-          </button>
-        </form>
+            <button mat-raised-button color="primary" class="full-width" type="submit">
+              Login
+            </button>
+          </form>
 
-        <!-- Google login area -->
-        <div style="margin-top: 1rem; text-align: center;">
-          <!-- 1) If GSI widget can be rendered, attempt to let it show (the library will render it) -->
-          <div *ngIf="gsiAvailable; else fallback">
-            <!-- Rendered widget (may or may not appear depending on Google policy / browser) -->
-            <asl-google-signin-button
-              type="standard"
-              size="large"
-              theme="outline"
-              shape="rectangular">
-            </asl-google-signin-button>
-            <div style="margin-top: 6px; color: #666;">or sign in using Google</div>
+          <!-- OR divider -->
+          <div class="divider">
+            <span>OR</span>
           </div>
 
-          <!-- 2) Fallback: programmatic sign-in button (works reliably) -->
-          <ng-template #fallback>
-            <button mat-stroked-button color="primary" (click)="signInWithGoogleProgrammatic()">
-              Continue with Google
-            </button>
-            <div style="margin-top: 6px; color: #999;">Google widget not available — using fallback</div>
-          </ng-template>
-        </div>
+          <!-- Google login -->
+          <div class="google-btn-wrapper full-width">
+            <div id="googleBtn" class="google-btn"></div>
+          </div>
+
+        </ng-template>
       </mat-tab>
+
 
       <!-- Register Tab -->
       <mat-tab label="Register">

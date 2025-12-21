@@ -100,9 +100,14 @@ export class ApiService {
     });
   }
 
-  googleLogin(data: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/auth/google-login`, data);
+  // googleLogin(data: any): Observable<any> {
+  //   return this.http.post(`${this.baseUrl}/auth/google-login`, data);
+  // }
+
+  googleLogin(payload: { idToken: string }) {
+    return this.http.post<any>(`${this.baseUrl}/auth/google`, payload);
   }
+
 
   // ----------- Profile ---------------
   // getProfileByEmail(email: string): Observable<any> {

@@ -16,3 +16,55 @@
   width: 100%;
   margin-bottom: 1rem;
 }
+
+/* Divider */
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 1.2rem 0;
+  color: #777;
+  font-size: 0.85rem;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #ddd;
+}
+
+.divider:not(:empty)::before {
+  margin-right: .75em;
+}
+
+.divider:not(:empty)::after {
+  margin-left: .75em;
+}
+
+/* Google button wrapper */
+.google-btn-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.google-btn-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+/* Match Login button width */
+.google-btn-wrapper.full-width {
+  width: 100%;
+}
+
+.google-btn {
+  width: 100%;
+}
+
+/* Force Google iframe to stretch */
+.google-btn iframe {
+  width: 100% !important;
+  max-width: 100% !important;
+}
