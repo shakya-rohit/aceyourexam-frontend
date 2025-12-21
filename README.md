@@ -30,11 +30,25 @@ The platform focuses on **exam realism, accuracy, and detailed analytics**, prov
 
 ## 🔐 Authentication & Security
 
-- Email & password-based authentication
-- JWT token generation and validation
-- Custom authentication filter (`JwtAuthenticationFilter`)
-- Route protection using Angular guards
-- Secure endpoint access via Spring Security
+AceYourExam implements a **production-grade authentication system** with both traditional and modern login flows.
+
+- 🔑 **Email & Password Authentication**
+  - Secure login and registration
+  - Passwords stored using strong hashing
+  - JWT-based stateless session management
+
+- 🟢 **Google OAuth 2.0 Login**
+  - One-click login using Google account
+  - Secure ID token verification on backend
+  - Automatic user provisioning for first-time Google users
+  - Seamless fallback to JWT-based authorization after login
+
+- 🛡️ **Security & Access Control**
+  - JWT token generation and validation
+  - Role-based authorization (**STUDENT / ADMIN**)
+  - Custom authentication filter (`JwtAuthenticationFilter`)
+  - Secure endpoint access via Spring Security
+  - Route protection using Angular guards
 
 ---
 
@@ -108,7 +122,9 @@ The platform focuses on **exam realism, accuracy, and detailed analytics**, prov
 
 - 🔐 **Secure Authentication**
   - Email & password login
+  - Google OAuth 2.0 login (One-click sign-in)
   - JWT-based session handling
+  - Role-based access control
 
 - 📝 **Real Exam Experience**
   - Timed exams with auto-submit
@@ -136,6 +152,16 @@ The platform focuses on **exam realism, accuracy, and detailed analytics**, prov
   - RESTful APIs
   - DTO-based responses
   - Modular security configuration
+
+---
+
+## 🌟 Notable Engineering Highlights
+
+- Implemented **Google OAuth 2.0 login** with backend ID token verification
+- Designed a **stateless authentication flow** combining OAuth + JWT
+- Built with **clean separation of concerns** (Controller → Service → Repository)
+- Handles real-world exam constraints (timeouts, autosave, auto-submit)
+- Scales cleanly for large exams (e.g., 180-question NEET simulations)
 
 ---
 
