@@ -28,6 +28,31 @@ The platform focuses on **exam realism, accuracy, and detailed analytics**, prov
 - AOP-based logging for better observability and debugging
 ---
 
+## ☁️ Production Deployment (AWS)
+
+AceYourExam is deployed on AWS using a **clean, production-style architecture** with clear separation between frontend, backend, and database.
+
+- **Frontend**
+  - Angular application hosted as a **static website on Amazon S3**
+
+- **Backend**
+  - Spring Boot REST APIs deployed on **AWS EC2**
+  - **Nginx** used as a reverse proxy for API traffic
+
+- **Database**
+  - PostgreSQL hosted on **AWS RDS**
+  - Deployed in a **private subnet**
+  - Database access restricted via Security Groups (EC2 → RDS only)
+
+- **Data Migration**
+  - Local PostgreSQL data migrated to AWS RDS using `pg_dump` / `pg_restore` via EC2
+
+- **Cost Considerations**
+  - Free-tier friendly setup (EC2, RDS, S3)
+  - No load balancers or NAT gateways
+
+---
+
 ## 🔐 Authentication & Security
 
 AceYourExam implements a **production-grade authentication system** with both traditional and modern login flows.
