@@ -239,4 +239,15 @@ export class ApiService {
     }
   }
 
+  forgotPassword(email: string) {
+    return this.http.post(`${this.baseUrl}/auth/forgot-password`, { email });
+  }
+
+  resetPassword(token: string, newPassword: string) {
+    return this.http.post(`${this.baseUrl}/auth/reset-password`, {
+      token,
+      newPassword
+    });
+  }
+  
 }

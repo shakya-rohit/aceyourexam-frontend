@@ -68,3 +68,28 @@
   width: 100% !important;
   max-width: 100% !important;
 }
+
+.forgot-password {
+  text-align: right;
+  margin-bottom: 12px;
+}
+
+.forgot-password a {
+  font-size: 13px;
+  color: #3f51b5;
+  text-decoration: none;
+}
+
+.forgot-password a:hover {
+  text-decoration: underline;
+}
+
+.forgot-link {
+  font-size: 13px;
+  padding: 0;
+  min-width: unset;
+}
+
+.password-field {
+  margin-bottom: 4px; /* instead of 1rem */
+}
