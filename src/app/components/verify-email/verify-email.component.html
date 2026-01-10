@@ -1,0 +1,44 @@
+<div class="verify-container">
+  <div class="verify-card">
+
+    <h2>Email Verification</h2>
+
+    <!-- LOADING -->
+    <div *ngIf="loading" class="info">
+      Verifying your email, please wait...
+    </div>
+
+    <!-- SUCCESS -->
+    <div *ngIf="success" class="success">
+      ✅ Your email has been verified successfully!
+      <p>Redirecting you to login...</p>
+    </div>
+
+    <!-- EXPIRED -->
+    <div *ngIf="expired && !resendSuccess" class="error">
+      ❌ Verification link has expired.
+      <p>Please request a new verification email.</p>
+
+      <button mat-raised-button color="primary"
+              (click)="resendVerification()"
+              [disabled]="resendLoading">
+        {{ resendLoading ? 'Sending...' : 'Resend Verification Email' }}
+      </button>
+    </div>
+
+    <!-- RESENT -->
+    <div *ngIf="resendSuccess" class="success">
+      📧 Verification email has been sent again.
+      <p>Please check your inbox.</p>
+    </div>
+
+    <!-- INVALID -->
+    <div *ngIf="errorMessage && !expired" class="error">
+      ❌ {{ errorMessage }}
+      <p>
+        <a routerLink="/login">Go to Login</a>
+      </p>
+    </div>
+
+  </div>
+</div>

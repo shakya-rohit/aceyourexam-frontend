@@ -249,5 +249,17 @@ export class ApiService {
       newPassword
     });
   }
+
+  verifyEmail(token: string) {
+    return this.http.get(`${this.baseUrl}/auth/verify-email`, {
+      params: { token }
+    });
+  }
+
+  resendVerificationEmail(token: string) {
+    return this.http.post(`${this.baseUrl}/auth/resend-verification`, null, {
+      params: { token }
+    });
+  }
   
 }
