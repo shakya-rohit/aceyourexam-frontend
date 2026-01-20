@@ -2,19 +2,14 @@ import { Routes } from '@angular/router';
 import { HomeComponent } from './components/home/home.component';
 import { AuthComponent } from './components/auth/auth.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
-import { ExamComponent } from './components/exam/exam.component';
-import { ResultsComponent } from './components/results/results.component';
 import { authGuard } from './guards/auth.guard';
 import { authRedirectGuard } from './guards/auth-redirect.guard';
-import { ProfileComponent } from './components/profile/profile.component';
-import { ForgotPasswordComponent } from './components/forgot-password/forgot-password.component';
-import { ResetPasswordComponent } from './components/reset-password/reset-password.component';
 
 export const routes: Routes = [
   {
     path: '',
     component: HomeComponent,
-    canActivate: [authRedirectGuard]   // 👈 smart redirect logic
+    canActivate: [authRedirectGuard]
   },
   {
     path: 'auth',
@@ -67,6 +62,30 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./components/verify-email/verify-email.component')
         .then(m => m.VerifyEmailComponent)
+  },
+  {
+    path: 'create-exam',
+    loadComponent: () =>
+      import('./components/create-exam/create-exam.component')
+        .then(m => m.CreateExamComponent)
+  },
+  {
+    path: 'create-exam/:examId/edit',
+    loadComponent: () =>
+      import('./components/create-exam/create-exam.component')
+        .then(m => m.CreateExamComponent)
+  },
+  {
+    path: 'exam-list',
+    loadComponent: () =>
+      import('./components/exams-list/exams-list.component')
+        .then(m => m.ExamsListComponent)
+  },
+  {
+    path: 'verify-otp',
+    loadComponent: () =>
+      import('./components/verify-otp/verify-otp.component')
+        .then(m => m.VerifyOtpComponent)
   },
   {
     path: '**',

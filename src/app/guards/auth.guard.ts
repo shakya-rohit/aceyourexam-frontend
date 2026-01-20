@@ -6,7 +6,6 @@ export const authGuard: CanActivateFn = (route, state) => {
   const token = localStorage.getItem('AYE_TOKEN');
 
   if (token) {
-    // Logged in ✅
     return true;
   } else {
     alert('Please log in to access this page.');

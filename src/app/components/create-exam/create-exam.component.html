@@ -1,0 +1,236 @@
+<div class="page-container">
+  <div class="content-wrapper">
+
+    <h2 class="page-title">
+      {{ isEditMode ? 'Edit Exam' : 'Create Exam' }}
+    </h2>
+
+    <form [formGroup]="examForm">
+      <mat-horizontal-stepper linear>
+
+        <!-- STEP 1: EXAM DETAILS -->
+        <mat-step [stepControl]="examDetailsGroup">
+          <ng-template matStepLabel>Exam Details</ng-template>
+
+          <div formGroupName="examDetails">
+
+            <mat-card class="section-card">
+              <div class="exam-info-grid">
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Exam Title *</mat-label>
+                  <input matInput formControlName="title" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Duration (minutes) *</mat-label>
+                  <input matInput type="number" formControlName="durationMinutes" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Description</mat-label>
+                  <textarea matInput formControlName="description"></textarea>
+                </mat-form-field>
+
+              </div>
+            </mat-card>
+
+          </div>
+
+          <div class="step-actions">
+            <button mat-raised-button color="primary" (click)="saveExam()">
+              Save
+            </button>
+            <button mat-raised-button color="primary" matStepperNext style="margin-left: 5px;">
+              Next
+            </button>
+          </div>
+        </mat-step>
+
+        <!-- STEP 2: QUESTIONS -->
+        <mat-step>
+          <ng-template matStepLabel>Questions</ng-template>
+
+          <!-- Header -->
+          <div class="questions-header">
+            <h3>Questions ({{ questions.length }})</h3>
+            <button mat-raised-button color="primary" (click)="startAddQuestion()">
+              + Add Question
+            </button>
+          </div>
+
+          <!-- ADD NEW QUESTION -->
+          <mat-card *ngIf="isAddingQuestion" class="question-card">
+            <h4>New Question</h4>
+
+            <div [formGroup]="newQuestionForm">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Question Text *</mat-label>
+                <textarea matInput formControlName="text"></textarea>
+              </mat-form-field>
+
+              <div class="exam-info-grid">
+                <mat-form-field appearance="outline">
+                  <mat-label>Marks *</mat-label>
+                  <input matInput type="number" formControlName="marks" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Subject *</mat-label>
+                  <input matInput formControlName="subject" />
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Topic *</mat-label>
+                  <input matInput formControlName="topic" />
+                </mat-form-field>
+              </div>
+
+              <div formArrayName="options" class="options">
+                <div *ngFor="let opt of newQuestionOptions.controls; let j = index" [formGroupName]="j"
+                  class="option-row">
+
+                  <mat-form-field appearance="outline" class="option-input">
+                    <mat-label>Option {{ j + 1 }}</mat-label>
+                    <input matInput formControlName="text" />
+                  </mat-form-field>
+
+                  <mat-checkbox formControlName="correct">Correct</mat-checkbox>
+                </div>
+              </div>
+
+              <button mat-button (click)="cancelAddQuestion()">Cancel</button>
+              <button mat-raised-button color="primary" (click)="saveNewQuestion()">
+                Save Question
+              </button>
+            </div>
+          </mat-card>
+
+          <!-- EXISTING QUESTIONS -->
+          <div formArrayName="questions">
+            <mat-card *ngFor="let q of questions.controls; let i = index" class="question-card" [attr.editing]="editingQuestionIndex === i ? true : null">
+
+              <!-- READ MODE -->
+              <div *ngIf="editingQuestionIndex !== i">
+                <h4>Q{{ i + 1 }}. {{ q.value.text }}</h4>
+                <p class="question-meta">
+                  <span>Marks: {{ q.value.marks }}</span>
+                  <span>Subject: {{ q.value.subject }}</span>
+                  <span>Topic: {{ q.value.topic }}</span>
+                </p>
+
+                <div class="question-actions">
+                  <button mat-button color="primary" (click)="startEditQuestion(i)">
+                    Edit
+                  </button>
+                  <button mat-button color="warn" (click)="removeQuestion(i)">
+                    Delete
+                  </button>
+                </div>
+              </div>
+
+              <!-- EDIT MODE -->
+              <div *ngIf="editingQuestionIndex === i" [formGroupName]="i">
+
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Question Text *</mat-label>
+                  <textarea matInput formControlName="text"></textarea>
+                </mat-form-field>
+
+                <div class="exam-info-grid">
+                  <mat-form-field appearance="outline">
+                    <mat-label>Marks *</mat-label>
+                    <input matInput type="number" formControlName="marks" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Subject *</mat-label>
+                    <input matInput formControlName="subject" />
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline">
+                    <mat-label>Topic *</mat-label>
+                    <input matInput formControlName="topic" />
+                  </mat-form-field>
+                </div>
+
+                <div formArrayName="options" class="options">
+                  <div *ngFor="let opt of options(i).controls; let j = index" [formGroupName]="j" class="option-row">
+
+                    <mat-form-field appearance="outline" class="option-input">
+                      <mat-label>Option {{ j + 1 }}</mat-label>
+                      <input matInput formControlName="text" />
+                    </mat-form-field>
+
+                    <mat-checkbox formControlName="correct">Correct</mat-checkbox>
+                  </div>
+                </div>
+
+                <button mat-button (click)="cancelEditQuestion()">Cancel</button>
+                <button mat-raised-button color="primary" (click)="saveEditedQuestion()">
+                  Save
+                </button>
+              </div>
+
+            </mat-card>
+          </div>
+
+          <div class="step-actions">
+            <button mat-button matStepperPrevious>Back</button>
+            <button mat-raised-button color="primary" matStepperNext>
+              Review
+            </button>
+          </div>
+        </mat-step>
+
+
+        <!-- STEP 3: REVIEW -->
+        <mat-step>
+          <ng-template matStepLabel>Review</ng-template>
+
+          <mat-card class="section-card">
+            <div class="review-item">
+              <strong>Title</strong>
+              <span>{{ examForm.value.examDetails.title }}</span>
+            </div>
+            <div class="review-item">
+              <strong>Duration</strong>
+              <span>{{ examForm.value.examDetails.durationMinutes }} minutes</span>
+            </div>
+            <div class="review-item">
+              <strong>Total Questions</strong>
+              <span>{{ questions.length }}</span>
+            </div>
+            <div class="review-item">
+              <strong>Total Marks</strong>
+              <span>{{ totalMarks() }}</span>
+            </div>
+          </mat-card>
+
+          <div class="step-actions">
+            <button mat-button matStepperPrevious>Back</button>
+            <button mat-raised-button color="accent" matStepperNext>
+              Publish
+            </button>
+          </div>
+        </mat-step>
+
+        <!-- STEP 4: PUBLISH -->
+        <mat-step>
+          <ng-template matStepLabel>Publish</ng-template>
+
+          <mat-card class="section-card publish-card">
+            <p>Once published, the exam cannot be edited.</p>
+          </mat-card>
+          
+          <button mat-button matStepperPrevious>Back</button>
+          <button mat-raised-button color="primary" (click)="submit()">
+            {{ isEditMode ? 'Update Exam' : 'Publish Exam' }}
+          </button>
+        </mat-step>
+
+      </mat-horizontal-stepper>
+    </form>
+
+  </div>
+</div>

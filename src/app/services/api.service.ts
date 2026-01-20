@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { BehaviorSubject, catchError, Observable, of } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { Exam } from '../models/exam.model';
 
 export interface Profile {
   id: string;
@@ -50,6 +51,12 @@ export class ApiService {
   // ---------- EXAMS ----------
   getExams(): Observable<any> {
     return this.http.get(`${this.baseUrl}/exams`, {
+      headers: this.getAuthHeaders()
+    });
+  }
+
+  deleteExam(examId: any): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/exams/${examId}`, {
       headers: this.getAuthHeaders()
     });
   }
@@ -259,6 +266,53 @@ export class ApiService {
   resendVerificationEmail(token: string) {
     return this.http.post(`${this.baseUrl}/auth/resend-verification`, null, {
       params: { token }
+    });
+  }
+
+  verifyOtp(otp: string) {
+    return this.http.get(`${this.baseUrl}/auth/verify-otp`, {
+      params: { otp }
+    });
+  }
+
+  resendOtp() {
+    return this.http.post(
+      `${this.baseUrl}/auth/resent-otp`,
+      {}
+    );
+  }
+
+  createExam(payload: any) {
+    return this.http.post(`${this.baseUrl}/exams`, payload, {
+      headers: this.getAuthHeaders()
+    });
+  }
+
+  getExamById(examId: string) {
+    return this.http.get<Exam>(`${this.baseUrl}/exams/${examId}`, {
+      headers: this.getAuthHeaders()
+    });
+  }
+
+  updateExam(examId: string, payload: any) {
+    return this.http.put(`/api/exams/${examId}`, payload);
+  }
+
+  publishExam(examId: string) {
+    return this.http.put<Exam>(`${this.baseUrl}/exams/publish/${examId}`, null, {
+      headers: this.getAuthHeaders()
+    });
+  }
+
+  addQuestionsInExam(examId: string, payload: any) {
+    return this.http.put(`${this.baseUrl}/questions/exam/${examId}`, payload, {
+      headers: this.getAuthHeaders()
+    });
+  }
+
+  updateQuestion(questionId: number, payload: any) {
+    return this.http.put(`${this.baseUrl}/questions/${questionId}`, payload, {
+      headers: this.getAuthHeaders()
     });
   }
   

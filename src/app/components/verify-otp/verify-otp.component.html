@@ -1,0 +1,48 @@
+<div class="otp-page">
+  <mat-card class="otp-card">
+
+    <h2 class="otp-title">Verify Your Email</h2>
+
+    <p class="otp-subtitle">
+      Enter the 6-digit code sent to <strong>{{ emailMasked }}</strong>
+    </p>
+
+    <form [formGroup]="otpForm">
+
+      <div class="otp-inputs">
+        <input maxlength="1" formControlName="d1" (input)="moveFocus($event, d2)" />
+        <input #d2 maxlength="1" formControlName="d2" (input)="moveFocus($event, d3)" />
+        <input #d3 maxlength="1" formControlName="d3" (input)="moveFocus($event, d4)" />
+        <input #d4 maxlength="1" formControlName="d4" (input)="moveFocus($event, d5)" />
+        <input #d5 maxlength="1" formControlName="d5" (input)="moveFocus($event, d6)" />
+        <input #d6 maxlength="1" formControlName="d6" />
+      </div>
+
+      <button
+        mat-raised-button
+        color="primary"
+        class="verify-btn"
+        [disabled]="otpForm.invalid"
+        (click)="verifyEmail()">
+        Verify Email
+      </button>
+
+    </form>
+
+    <p class="resend-text">
+      Didn’t receive the code?
+      <span
+        class="resend-link"
+        [class.disabled]="resendTimer > 0"
+        (click)="resendOtp()">
+        {{ resendTimer > 0 ? 'Resend OTP in ' + resendTimer + 's' : 'Resend OTP' }}
+      </span>
+    </p>
+
+    <p class="support-text">
+      If you received this code without trying to sign in, please contact
+      <a href="mailto:support@aceyourexam.com">support&#64;aceyourexam.com</a>
+    </p>
+
+  </mat-card>
+</div>

@@ -34,6 +34,10 @@
         <mat-icon>bar_chart</mat-icon>
         <span>Results</span>
       </button>
+      <button *ngIf="userRole==='ADMIN'" mat-menu-item routerLink="/exam-list">
+        <mat-icon>assignment</mat-icon>
+        <span>Exams</span>
+      </button>
       <button mat-menu-item (click)="logout()">
         <mat-icon>logout</mat-icon>
         <span>Logout</span>

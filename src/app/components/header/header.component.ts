@@ -26,6 +26,7 @@ import { MatDivider } from "@angular/material/divider";
 export class HeaderComponent implements OnInit {
   isLoggedIn = false;
   userName = '';
+  userRole = 'STUDENT';
 
   constructor(private api: ApiService, private router: Router) {}
 
@@ -37,9 +38,11 @@ export class HeaderComponent implements OnInit {
       if (userData) {
         try {
           const parsed = JSON.parse(userData);
-          this.userName = parsed.name || parsed.username || 'User';
+          this.userName = parsed.name || 'User';
+          this.userRole = parsed.role || 'STUDENT';
         } catch {
           this.userName = 'User';
+          this.userRole = 'STUDENT';
         }
       }
     }

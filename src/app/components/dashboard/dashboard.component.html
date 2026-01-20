@@ -20,6 +20,18 @@
   <!-- ---------- PERFORMANCE CHART ---------- -->
   <div class="chart-section" *ngIf="results.length">
     <h3 class="chart-title">Performance Over Time</h3>
+    <!-- ---------- SUBJECT TOGGLES ---------- -->
+    <div class="subject-toggle">
+      <label *ngFor="let s of subjectFilters">
+        <input
+          type="checkbox"
+          [checked]="s.visible"
+          (change)="toggleDataset(s.label, $event)"
+        />
+        <span>{{ s.label }}</span>
+      </label>
+    </div>
+
     <div class="chart-wrapper">
       <canvas
         baseChart
@@ -41,7 +53,7 @@
   <mat-divider style="margin: 2rem 0;"></mat-divider>
 
   <!-- ---------- EXAMS ---------- -->
-  <h3>Available Exams</h3>
+  <!-- <h3>Available Exams</h3>
   <div class="exam-list">
     <mat-card *ngFor="let exam of exams" class="exam-card">
       <h3>{{ exam.title }}</h3>
@@ -49,13 +61,76 @@
       <p>Total Marks: {{ exam.totalMarks }}</p>
       <button mat-raised-button color="primary" (click)="startExam(exam)">Start Exam</button>
     </mat-card>
-  </div>
+  </div> -->
+
+  <!-- ---------- EXAMS WITH TABS ---------- -->
+<h3>Exams:</h3>
+
+<mat-tab-group
+  [(selectedIndex)]="selectedExamTab"
+  class="exam-tabs"
+  animationDuration="300ms">
+
+  <!-- UPCOMING (DEFAULT) -->
+  <mat-tab label="Upcoming">
+    <div class="exam-list">
+      <mat-card *ngFor="let exam of upcomingExams" class="exam-card">
+        <h3>{{ exam.title }}</h3>
+        <p>Duration: {{ exam.durationMinutes }} mins</p>
+        <p>Total Marks: {{ exam.totalMarks }}</p>
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="startExam(exam)">
+          Start Exam
+        </button>
+      </mat-card>
+
+      <p *ngIf="!upcomingExams.length" class="empty-text">
+        No upcoming exams available.
+      </p>
+    </div>
+  </mat-tab>
+
+  <!-- ALL -->
+  <mat-tab label="All">
+    <div class="exam-list">
+      <mat-card *ngFor="let exam of exams" class="exam-card">
+        <h3>{{ exam.title }}</h3>
+        <p>Duration: {{ exam.durationMinutes }} mins</p>
+        <p>Total Marks: {{ exam.totalMarks }}</p>
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="startExam(exam)">
+          Start Exam
+        </button>
+      </mat-card>
+    </div>
+  </mat-tab>
+
+  <!-- PAST -->
+  <mat-tab label="Past">
+    <div class="exam-list">
+      <mat-card *ngFor="let exam of pastExams" class="exam-card past-exam">
+        <h3>{{ exam.title }}</h3>
+        <p>Completed</p>
+      </mat-card>
+
+      <p *ngIf="!pastExams.length" class="empty-text">
+        You haven’t attempted any exams yet.
+      </p>
+    </div>
+  </mat-tab>
+
+</mat-tab-group>
+
 
   <mat-divider style="margin: 2rem 0;"></mat-divider>
 
   <!-- ---------- RESULTS ---------- -->
   <div class="results-section">
-    <h3>Your Past Results</h3>
+    <h3>Your Past Results:</h3>
 
     <ng-container *ngIf="results.length; else noResults">
       <div *ngFor="let r of results" class="result-card">
