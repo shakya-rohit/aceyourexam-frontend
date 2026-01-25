@@ -17,9 +17,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatPaginatorModule } from '@angular/material/paginator';
 
 import { ApiService } from '../../services/api.service';
 import { state } from '@angular/animations';
+import { MatOption } from "@angular/material/core";
+import { MatSelect } from "@angular/material/select";
+import { QuestionBankService } from '../../services/question-bank.service';
 
 @Component({
   selector: 'app-create-exam',
@@ -27,7 +31,6 @@ import { state } from '@angular/animations';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
@@ -35,7 +38,10 @@ import { state } from '@angular/animations';
     MatIconModule,
     MatCardModule,
     MatStepperModule,
-    MatDividerModule
+    MatDividerModule,
+    MatOption,
+    MatSelect,
+    MatPaginatorModule
   ],
   templateUrl: './create-exam.component.html',
   styleUrls: ['./create-exam.component.scss']
@@ -52,13 +58,221 @@ export class CreateExamComponent implements OnInit {
   isAddingQuestion = false;
   newQuestionForm!: FormGroup;
 
+  // ---------------- Question Bank Filters ----------------
+
+  filters = {
+    subject: '',
+    topic: '',
+    difficulty: [] as string[],
+    q: ''
+  };
+
+
+  // ---------------- QUESTION BANK (UI ONLY) ----------------
+
+  selectedQuestions: any[] = [];
+  loadingSelectedQuestions = false;
+
+  // pagination
+pageSize = 5;
+pageIndex = 0;
+
+allQuestionBank: any[] = [];   // full result
+pagedQuestionBank: any[] = []; // current page
+
+
+  // ---------------- STEP 2: Selected Questions ----------------
+  loadSelectedQuestions() {
+    if (!this.examId) return;
+
+    this.loadingSelectedQuestions = true;
+
+    this.service.getQuestionsByExam(+this.examId).subscribe({
+      next: (questions) => {
+        this.selectedQuestions = questions || [];
+        this.loadingSelectedQuestions = false;
+      },
+      error: () => {
+        this.loadingSelectedQuestions = false;
+      }
+    });
+  }
+
+
+  toggleSelection(q: any) {
+    const idx = this.selectedQuestions.findIndex(x => x.id === q.id);
+    if (idx >= 0) {
+      this.selectedQuestions.splice(idx, 1);
+    } else {
+      this.selectedQuestions.push(q);
+    }
+  }
+
+  isSelected(q: any): boolean {
+    return this.selectedQuestions.some(x => x.id === q.id);
+  }
+
+  removeSelected(q: any) {
+    this.selectedQuestions = this.selectedQuestions.filter(x => x.id !== q.id);
+  }
+
+  clearSelection() {
+    this.selectedQuestions = [];
+  }
+
+  totalSelectedMarks(): number {
+    return this.selectedQuestions.reduce(
+      (sum, q) => sum + (q.marks || 0),
+      0
+    );
+  }
+
+
+  // ---------------- Question Bank Selection ----------------
+
+  selectedQuestionBankIds = new Set<number>();
+  addingFromBank = false;
+
+  toggleQuestionBankSelection(qb: any) {
+    if (this.selectedQuestionBankIds.has(qb.id)) {
+      this.selectedQuestionBankIds.delete(qb.id);
+    } else {
+      this.selectedQuestionBankIds.add(qb.id);
+    }
+  }
+
+  isAlreadyInExam(qb: any): boolean {
+    return this.selectedQuestions.some(q => q.text === qb.text);
+  }
+
+  addFromQuestionBank() {
+    if (this.selectedQuestionBankIds.size === 0 || !this.examId) return;
+
+    this.addingFromBank = true;
+
+    const payload = {
+      questionBankIds: Array.from(this.selectedQuestionBankIds)
+    };
+
+    this.service
+      .addQuestionsFromQuestionBank(this.examId, payload)
+      .subscribe({
+        next: () => {
+          // clear local selection
+          this.selectedQuestionBankIds.clear();
+
+          // refresh selected questions from backend
+          this.loadSelectedQuestions();
+
+          this.addingFromBank = false;
+        },
+        error: () => {
+          this.addingFromBank = false;
+        }
+      });
+  }
+
+  removeQuestion(questionId: number) {
+    if (!this.examId) return;
+
+    this.service
+      .removeQuestionFromExam(this.examId, questionId)
+      .subscribe({
+        next: () => {
+          // refresh selected questions from backend
+          this.loadSelectedQuestions();
+        },
+        error: () => {
+          console.error('Failed to remove question from exam');
+        }
+      });
+  }
+
+  questionBank: any[] = [];
+  loadingQuestionBank = false;
+
+  loadQuestionBank() {
+    this.loadingQuestionBank = true;
+
+    this.questionBankService.search(this.filters).subscribe({
+      next: (res) => {
+        this.allQuestionBank = res || [];
+this.pageIndex = 0;
+this.updatePagedQuestions();
+
+        this.loadingQuestionBank = false;
+      },
+      error: () => {
+        this.loadingQuestionBank = false;
+      }
+    });
+  }
+
+  updatePagedQuestions() {
+  const start = this.pageIndex * this.pageSize;
+  const end = start + this.pageSize;
+  this.pagedQuestionBank = this.allQuestionBank.slice(start, end);
+}
+
+onPageChange(event: any) {
+  this.pageIndex = event.pageIndex;
+  this.pageSize = event.pageSize;
+  this.updatePagedQuestions();
+}
+
+
+  onSearchChange(value: string) {
+    this.filters.q = value;
+    this.loadQuestionBank();
+  }
+
+  onSearchChangeInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.onSearchChange(input.value);
+  }
+
+  onSubjectChange(value: string) {
+    this.filters.subject = value;
+    this.loadQuestionBank();
+  }
+
+  onTopicChange(value: string) {
+    this.filters.topic = value;
+    this.loadQuestionBank();
+  }
+
+  onDifficultyToggle(level: string, checked: boolean) {
+    if (checked && !this.filters.difficulty.includes(level)) {
+      this.filters.difficulty.push(level);
+    } else if (!checked) {
+      this.filters.difficulty = this.filters.difficulty.filter(d => d !== level);
+    }
+    this.loadQuestionBank();
+  }
+
+  resetFilters() {
+    this.filters = {
+      subject: '',
+      topic: '',
+      difficulty: [],
+      q: ''
+    };
+    this.loadQuestionBank();
+  }
+
+
+
+
+
 
   constructor(
     private fb: FormBuilder,
     private service: ApiService,
+    private questionBankService: QuestionBankService,
     private router: Router,
     private route: ActivatedRoute
-  ) {}
+  ) { }
+
 
   ngOnInit(): void {
     this.examId = this.route.snapshot.paramMap.get('examId')!;
@@ -76,6 +290,15 @@ export class CreateExamComponent implements OnInit {
     if (this.isEditMode) {
       this.loadExamForEdit();
     }
+
+    // Load selected questions when editing an exam
+    if (this.isEditMode) {
+      this.loadSelectedQuestions();
+    }
+
+    this.loadQuestionBank();
+
+
   }
 
   /* ---------------- GETTERS ---------------- */
@@ -108,9 +331,9 @@ export class CreateExamComponent implements OnInit {
       });
     });
 
-    this.service.getQuestionsByExam(+this.examId).subscribe(questions => {
-      this.setQuestions(questions || []);
-    });
+    // this.service.getQuestionsByExam(+this.examId).subscribe(questions => {
+    //   this.setQuestions(questions || []);
+    // });
   }
 
   setQuestions(questions: any[]) {
@@ -158,10 +381,6 @@ export class CreateExamComponent implements OnInit {
     );
   }
 
-  removeQuestion(index: number) {
-    this.questions.removeAt(index);
-  }
-
   createOption(): FormGroup {
     return this.fb.group({
       text: ['', Validators.required],
@@ -207,16 +426,16 @@ export class CreateExamComponent implements OnInit {
     const data = this.newQuestionForm.value;
 
     const payload = {
-        text: data.text,
-        marks: data.marks,
-        subject: data.subject,
-        topic: data.topic,
-        optionList: data.options.map((o: any) => o.text),
-        correctOptionIndex: data.options.findIndex((o: any) => o.correct)
+      text: data.text,
+      marks: data.marks,
+      subject: data.subject,
+      topic: data.topic,
+      optionList: data.options.map((o: any) => o.text),
+      correctOptionIndex: data.options.findIndex((o: any) => o.correct)
     };
     this.service.addQuestionsInExam(this.examId, [payload]).subscribe({
-      next: ()=>console.log("Question saved sunncessfully"),
-      error: ()=>console.log("Failed to save questions")
+      next: () => console.log("Question saved sunncessfully"),
+      error: () => console.log("Failed to save questions")
     });
   }
 
@@ -253,8 +472,8 @@ export class CreateExamComponent implements OnInit {
       }
     });
   }
-  
-  saveExam(){
+
+  saveExam() {
     const payload = {
       ...this.examForm.value.examDetails,
       status: "DRAFT"
@@ -266,41 +485,10 @@ export class CreateExamComponent implements OnInit {
     });
   }
 
-
-  /* ---------------- REVIEW HELPERS ---------------- */
-
-  totalMarks(): number {
-    return this.questions.value.reduce(
-      (sum: number, q: any) => sum + (q.marks || 0),
-      0
-    );
-  }
-
-  /* ---------------- SUBMIT ---------------- */
-
   submit() {
     if (this.examForm.invalid || this.submitting) return;
 
     this.submitting = true;
-
-    // const payload = {
-    //   ...this.examForm.value.examDetails,
-    //   status: 'PUBLISH',
-    //   questions: this.examForm.value.questions.map((q: any) => ({
-    //     text: q.text,
-    //     marks: q.marks,
-    //     subject: q.subject,
-    //     topic: q.topic,
-    //     optionList: q.options.map((o: any) => o.text),
-    //     correctOptionIndex: q.options.findIndex((o: any) => o.correct)
-    //   }))
-    // };
-
-    // const req$ = this.isEditMode
-    //   ? this.service.addQuestionsInExam(this.examId, payload.questions)
-    //   : this.service.createExam(payload);
-
-    // const req$ = this.service.createExam(payload);
 
     const req$ = this.service.publishExam(this.examId);
 

@@ -1,0 +1,72 @@
+.page-container {
+  padding: 1.5rem 2rem;
+}
+
+.content-wrapper {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.page-title {
+  margin-bottom: 1rem;
+}
+
+.section-card {
+  padding: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.form-section {
+  margin-bottom: 1.5rem;
+}
+
+.form-section h4 {
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  color: #444;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.action-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.qb-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.qb-table th,
+.qb-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.qb-table th {
+  text-align: left;
+  font-weight: 600;
+  background: #fafafa;
+}
+
+.actions {
+  white-space: nowrap;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2rem 0;
+  color: #777;
+  font-style: italic;
+}

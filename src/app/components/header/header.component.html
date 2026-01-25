@@ -38,6 +38,10 @@
         <mat-icon>assignment</mat-icon>
         <span>Exams</span>
       </button>
+      <button *ngIf="userRole==='ADMIN'" mat-menu-item routerLink="/question-bank">
+        <mat-icon>library_books</mat-icon>
+        <span>Question Bank</span>
+      </button>
       <button mat-menu-item (click)="logout()">
         <mat-icon>logout</mat-icon>
         <span>Logout</span>

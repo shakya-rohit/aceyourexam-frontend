@@ -88,6 +88,12 @@ export const routes: Routes = [
         .then(m => m.VerifyOtpComponent)
   },
   {
+    path: 'question-bank',
+    loadComponent: () =>
+      import('./components/question-bank/question-bank.component')
+        .then(m => m.QuestionBankComponent)
+  },
+  {
     path: '**',
     redirectTo: ''
   }

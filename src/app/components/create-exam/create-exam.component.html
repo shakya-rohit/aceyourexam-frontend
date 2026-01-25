@@ -53,135 +53,161 @@
 
           <!-- Header -->
           <div class="questions-header">
-            <h3>Questions ({{ questions.length }})</h3>
-            <button mat-raised-button color="primary" (click)="startAddQuestion()">
-              + Add Question
+            <h3>Questions ({{ selectedQuestions.length }} selected)</h3>
+            <button mat-raised-button color="primary" (click)="addFromQuestionBank()"
+              [disabled]="selectedQuestionBankIds.size === 0 || addingFromBank">
+              Add from Question Bank
             </button>
+
           </div>
 
-          <!-- ADD NEW QUESTION -->
-          <mat-card *ngIf="isAddingQuestion" class="question-card">
-            <h4>New Question</h4>
+          <!-- MAIN LAYOUT -->
+          <div class="qb-layout">
 
-            <div [formGroup]="newQuestionForm">
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>Question Text *</mat-label>
-                <textarea matInput formControlName="text"></textarea>
+            <!-- FILTERS -->
+            <div class="qb-filters">
+              <h4>Filters</h4>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Subject</mat-label>
+                <mat-select (selectionChange)="onSubjectChange($event.value)">
+                  <mat-option value="">All</mat-option>
+                  <mat-option value="Physics">Physics</mat-option>
+                  <mat-option value="Chemistry">Chemistry</mat-option>
+                  <mat-option value="Biology">Biology</mat-option>
+                </mat-select>
+
               </mat-form-field>
 
-              <div class="exam-info-grid">
-                <mat-form-field appearance="outline">
-                  <mat-label>Marks *</mat-label>
-                  <input matInput type="number" formControlName="marks" />
-                </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Topic</mat-label>
+                <mat-select (selectionChange)="onTopicChange($event.value)">
+                  <mat-option value="">All</mat-option>
+                  <mat-option value="Mechanics">Mechanics</mat-option>
+                  <mat-option value="Optics">Optics</mat-option>
+                  <mat-option value="Thermodynamics">Thermodynamics</mat-option>
+                </mat-select>
 
-                <mat-form-field appearance="outline">
-                  <mat-label>Subject *</mat-label>
-                  <input matInput formControlName="subject" />
-                </mat-form-field>
+              </mat-form-field>
 
-                <mat-form-field appearance="outline">
-                  <mat-label>Topic *</mat-label>
-                  <input matInput formControlName="topic" />
-                </mat-form-field>
+              <div class="difficulty-filters">
+                <mat-checkbox (change)="onDifficultyToggle('EASY', $event.checked)">
+                  Easy
+                </mat-checkbox>
+
+                <mat-checkbox (change)="onDifficultyToggle('MEDIUM', $event.checked)">
+                  Medium
+                </mat-checkbox>
+
+                <mat-checkbox (change)="onDifficultyToggle('HARD', $event.checked)">
+                  Hard
+                </mat-checkbox>
+
               </div>
 
-              <div formArrayName="options" class="options">
-                <div *ngFor="let opt of newQuestionOptions.controls; let j = index" [formGroupName]="j"
-                  class="option-row">
-
-                  <mat-form-field appearance="outline" class="option-input">
-                    <mat-label>Option {{ j + 1 }}</mat-label>
-                    <input matInput formControlName="text" />
-                  </mat-form-field>
-
-                  <mat-checkbox formControlName="correct">Correct</mat-checkbox>
-                </div>
-              </div>
-
-              <button mat-button (click)="cancelAddQuestion()">Cancel</button>
-              <button mat-raised-button color="primary" (click)="saveNewQuestion()">
-                Save Question
+              <button mat-stroked-button color="primary" (click)="resetFilters()">
+                Reset Filters
               </button>
+
             </div>
-          </mat-card>
 
-          <!-- EXISTING QUESTIONS -->
-          <div formArrayName="questions">
-            <mat-card *ngFor="let q of questions.controls; let i = index" class="question-card" [attr.editing]="editingQuestionIndex === i ? true : null">
+            <!-- QUESTION BANK LIST -->
+            <div class="qb-list">
+              <h4>Question Bank</h4>
 
-              <!-- READ MODE -->
-              <div *ngIf="editingQuestionIndex !== i">
-                <h4>Q{{ i + 1 }}. {{ q.value.text }}</h4>
-                <p class="question-meta">
-                  <span>Marks: {{ q.value.marks }}</span>
-                  <span>Subject: {{ q.value.subject }}</span>
-                  <span>Topic: {{ q.value.topic }}</span>
-                </p>
+              <mat-form-field appearance="outline" class="qb-search">
+                <mat-label>Search questions</mat-label>
+                <mat-icon matPrefix>search</mat-icon>
+                <input matInput (input)="onSearchChangeInput($event)" />
+              </mat-form-field>
 
-                <div class="question-actions">
-                  <button mat-button color="primary" (click)="startEditQuestion(i)">
-                    Edit
-                  </button>
-                  <button mat-button color="warn" (click)="removeQuestion(i)">
-                    Delete
-                  </button>
-                </div>
-              </div>
+              <ng-container *ngIf="!loadingQuestionBank; else qbLoading">
 
-              <!-- EDIT MODE -->
-              <div *ngIf="editingQuestionIndex === i" [formGroupName]="i">
+                <div class="qb-question" *ngFor="let q of pagedQuestionBank"
+                  [class.selected]="selectedQuestionBankIds.has(q.id)">
+                  <mat-checkbox [checked]="selectedQuestionBankIds.has(q.id)" [disabled]="isAlreadyInExam(q)"
+                    (change)="toggleQuestionBankSelection(q)">
+                    <strong>{{ q.text }}</strong>
+                  </mat-checkbox>
 
-                <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Question Text *</mat-label>
-                  <textarea matInput formControlName="text"></textarea>
-                </mat-form-field>
-
-                <div class="exam-info-grid">
-                  <mat-form-field appearance="outline">
-                    <mat-label>Marks *</mat-label>
-                    <input matInput type="number" formControlName="marks" />
-                  </mat-form-field>
-
-                  <mat-form-field appearance="outline">
-                    <mat-label>Subject *</mat-label>
-                    <input matInput formControlName="subject" />
-                  </mat-form-field>
-
-                  <mat-form-field appearance="outline">
-                    <mat-label>Topic *</mat-label>
-                    <input matInput formControlName="topic" />
-                  </mat-form-field>
-                </div>
-
-                <div formArrayName="options" class="options">
-                  <div *ngFor="let opt of options(i).controls; let j = index" [formGroupName]="j" class="option-row">
-
-                    <mat-form-field appearance="outline" class="option-input">
-                      <mat-label>Option {{ j + 1 }}</mat-label>
-                      <input matInput formControlName="text" />
-                    </mat-form-field>
-
-                    <mat-checkbox formControlName="correct">Correct</mat-checkbox>
+                  <div class="qb-meta">
+                    {{ q.subject }} • {{ q.topic }} • {{ q.difficulty }} • {{ q.marks }} Marks
                   </div>
                 </div>
 
-                <button mat-button (click)="cancelEditQuestion()">Cancel</button>
-                <button mat-raised-button color="primary" (click)="saveEditedQuestion()">
-                  Save
-                </button>
-              </div>
+                <div *ngIf="pagedQuestionBank.length === 0" style="color:#777;">
+                  No questions found.
+                </div>
 
-            </mat-card>
+              </ng-container>
+
+              <ng-template #qbLoading>
+                <p>Loading question bank...</p>
+              </ng-template>
+
+              <mat-paginator
+  [length]="allQuestionBank.length"
+  [pageSize]="pageSize"
+  [pageIndex]="pageIndex"
+  [pageSizeOptions]="[5, 10, 20]"
+  (page)="onPageChange($event)">
+</mat-paginator>
+
+            </div>
+
+
+            <!-- SELECTED QUESTIONS -->
+            <div class="qb-selected">
+              <h4>
+                Selected Questions
+                <button mat-button color="primary" (click)="loadSelectedQuestions()">
+                  Refresh
+                </button>
+              </h4>
+
+              <ng-container *ngIf="!loadingSelectedQuestions; else loadingTpl">
+
+                <p><strong>Total Questions:</strong> {{ selectedQuestions.length }}</p>
+                <p><strong>Total Marks:</strong> {{ totalSelectedMarks() }}</p>
+
+                <div *ngIf="selectedQuestions.length === 0" style="margin-top: 1rem; color: #777;">
+                  No questions selected yet.
+                </div>
+
+                <div class="selected-item" *ngFor="let q of selectedQuestions; let i = index">
+                  <span>
+                    {{ i + 1 }}. {{ q.text }} ({{ q.marks }})
+                  </span>
+
+                  <div class="actions">
+                    <button mat-icon-button color="primary" disabled>
+                      <mat-icon>sync</mat-icon>
+                    </button>
+                    <button mat-icon-button color="warn" (click)="removeQuestion(q.id)" matTooltip="Remove from exam">
+                      <mat-icon>delete</mat-icon>
+                    </button>
+                  </div>
+                </div>
+
+              </ng-container>
+
+              <ng-template #loadingTpl>
+                <p>Loading selected questions...</p>
+              </ng-template>
+            </div>
+
+
           </div>
 
           <div class="step-actions">
             <button mat-button matStepperPrevious>Back</button>
-            <button mat-raised-button color="primary" matStepperNext>
+            <button mat-raised-button color="primary" matStepperNext [disabled]="selectedQuestions.length === 0">
               Review
             </button>
+
           </div>
         </mat-step>
+
 
 
         <!-- STEP 3: REVIEW -->
@@ -199,11 +225,11 @@
             </div>
             <div class="review-item">
               <strong>Total Questions</strong>
-              <span>{{ questions.length }}</span>
+              <span>{{ selectedQuestions.length }}</span>
             </div>
             <div class="review-item">
               <strong>Total Marks</strong>
-              <span>{{ totalMarks() }}</span>
+              <span>{{ totalSelectedMarks() }}</span>
             </div>
           </mat-card>
 
@@ -222,7 +248,7 @@
           <mat-card class="section-card publish-card">
             <p>Once published, the exam cannot be edited.</p>
           </mat-card>
-          
+
           <button mat-button matStepperPrevious>Back</button>
           <button mat-raised-button color="primary" (click)="submit()">
             {{ isEditMode ? 'Update Exam' : 'Publish Exam' }}

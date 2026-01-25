@@ -1,0 +1,133 @@
+<div class="page-container">
+  <div class="content-wrapper">
+
+    <h2 class="page-title">Question Bank</h2>
+
+    <!-- ================= ADD / EDIT QUESTION ================= -->
+    <mat-card class="section-card">
+      <h3>{{ isEditMode ? 'Edit Question' : 'Add Question' }}</h3>
+
+      <form [formGroup]="questionForm">
+
+        <!-- Question -->
+        <div class="form-section">
+          <h4>Question</h4>
+          <mat-form-field appearance="outline" class="full-width">
+            <textarea matInput rows="3" placeholder="Enter question text" formControlName="text">
+            </textarea>
+          </mat-form-field>
+        </div>
+
+        <!-- Options -->
+        <div class="form-section">
+          <h4>Options</h4>
+          <mat-form-field appearance="outline" class="full-width">
+            <input matInput placeholder="Option A || Option B || Option C || Option D" formControlName="options">
+            <mat-hint>Use <b>||</b> to separate options</mat-hint>
+          </mat-form-field>
+        </div>
+
+        <!-- Metadata -->
+        <div class="form-section">
+          <h4>Metadata</h4>
+
+          <div class="form-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Correct Option Index</mat-label>
+              <input matInput type="number" formControlName="correctOptionIndex">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Difficulty</mat-label>
+              <mat-select formControlName="difficulty">
+                <mat-option *ngFor="let d of difficulties" [value]="d">
+                  {{ d }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Marks</mat-label>
+              <input matInput type="number" formControlName="marks">
+            </mat-form-field>
+          </div>
+
+          <div class="form-grid">
+
+            <!-- Subject Dropdown -->
+            <mat-form-field appearance="outline">
+              <mat-label>Subject</mat-label>
+              <mat-select formControlName="subject" (selectionChange)="onSubjectChange($event.value)">
+                <mat-option *ngFor="let s of subjects" [value]="s.name">
+                  {{ s.name }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <!-- Topic Dropdown -->
+            <mat-form-field appearance="outline">
+              <mat-label>Topic</mat-label>
+              <mat-select formControlName="topic" [disabled]="topics.length === 0">
+                <mat-option *ngFor="let t of topics" [value]="t.name">
+                  {{ t.name }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+          </div>
+
+        </div>
+
+        <!-- Actions -->
+        <div class="action-row">
+          <button mat-raised-button color="primary" (click)="submit()">
+            {{ isEditMode ? 'Update Question' : 'Add Question' }}
+          </button>
+
+          <button *ngIf="isEditMode" mat-button type="button" (click)="reset()">
+            Cancel
+          </button>
+        </div>
+
+      </form>
+    </mat-card>
+
+    <!-- ================= QUESTION LIST ================= -->
+    <mat-card class="section-card">
+      <h3>All Questions</h3>
+
+      <div *ngIf="questions.length === 0" class="empty-state">
+        No questions yet. Add your first question to the bank.
+      </div>
+
+      <table *ngIf="questions.length > 0" class="qb-table">
+        <thead>
+          <tr>
+            <th>Question</th>
+            <th>Subject</th>
+            <th>Topic</th>
+            <th>Difficulty</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let q of questions">
+            <td>{{ q.text }}</td>
+            <td>{{ q.subject }}</td>
+            <td>{{ q.topic }}</td>
+            <td>{{ q.difficulty }}</td>
+            <td class="actions">
+              <button mat-icon-button (click)="edit(q)">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button mat-icon-button color="warn" (click)="delete(q.id)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </mat-card>
+
+  </div>
+</div>
