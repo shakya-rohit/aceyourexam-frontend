@@ -283,7 +283,7 @@ export class ApiService {
   }
 
   createExam(payload: any) {
-    return this.http.post(`${this.baseUrl}/exams`, payload, {
+    return this.http.post<Exam>(`${this.baseUrl}/exams`, payload, {
       headers: this.getAuthHeaders()
     });
   }
@@ -295,7 +295,9 @@ export class ApiService {
   }
 
   updateExam(examId: string, payload: any) {
-    return this.http.put(`/api/exams/${examId}`, payload);
+    return this.http.put(`${this.baseUrl}/exams/${examId}`, payload, {
+      headers: this.getAuthHeaders()
+    });
   }
 
   publishExam(examId: string) {

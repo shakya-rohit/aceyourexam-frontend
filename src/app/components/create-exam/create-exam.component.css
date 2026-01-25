@@ -66,7 +66,7 @@
 /* ================= QUESTION BANK LAYOUT ================= */
 .qb-layout {
   display: grid;
-  grid-template-columns: 260px minmax(0, 1.6fr) 340px;
+  grid-template-columns: 260px minmax(0, 1.4fr) minmax(0, 1fr);
   gap: 1.25rem;
   margin-top: 1rem;
 }
@@ -188,4 +188,119 @@
 
 .qb-search {
   width: 100%;
+}
+
+/* ================= REVIEW SUMMARY ================= */
+
+.review-summary {
+  margin-bottom: 1.5rem;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 180px 1fr auto;
+  row-gap: 0.75rem;
+  align-items: center;
+}
+
+.summary-grid .label {
+  font-weight: 600;
+  color: #555;
+}
+
+.summary-grid .value {
+  justify-self: end;
+  font-weight: 500;
+  color: #111;
+}
+
+
+
+/* ================= BREAKDOWN ================= */
+
+.breakdown-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px dashed #e0e0e0;
+}
+
+.breakdown-item:last-child {
+  border-bottom: none;
+}
+
+/* ================= WARNINGS ================= */
+
+.warning-card {
+  background: #fffbe6;
+  border-left: 4px solid #ffb300;
+}
+
+.warning-card ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
+/* ================= QUESTION PREVIEW ================= */
+
+.question-preview {
+  margin-top: 0.75rem;
+}
+
+.preview-item {
+  padding: 0.35rem 0;
+  font-size: 0.9rem;
+  border-bottom: 1px solid #eee;
+}
+
+.preview-item:last-child {
+  border-bottom: none;
+}
+
+/* ================= STICKY FOOTER ================= */
+
+.review-footer {
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  padding: 1rem 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #eee;
+  margin-top: 1.5rem;
+}
+
+.footer-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.lock-note {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.publish-info {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.publish-info li {
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.publish-card {
+  background: #fff8f8;
+  border-left: 4px solid #f44336;
+}
+
+/* Step actions aligned to right */
+.step-actions-right {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.25rem;
 }

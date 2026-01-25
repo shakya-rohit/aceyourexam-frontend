@@ -15,7 +15,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
-import { MatStepperModule } from '@angular/material/stepper';
+import { MatStepper, MatStepperModule } from '@angular/material/stepper';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatPaginatorModule } from '@angular/material/paginator';
 
@@ -70,16 +70,68 @@ export class CreateExamComponent implements OnInit {
 
   // ---------------- QUESTION BANK (UI ONLY) ----------------
 
+  // pagination
+  pageSize = 5;
+  pageIndex = 0;
+
+  allQuestionBank: any[] = [];   // full result
+  pagedQuestionBank: any[] = []; // current page
+
+  // Selected questions pagination
+  selectedPageSize = 5;
+  selectedPageIndex = 0;
+
+  pagedSelectedQuestions: any[] = [];
   selectedQuestions: any[] = [];
   loadingSelectedQuestions = false;
 
-  // pagination
-pageSize = 5;
-pageIndex = 0;
+  showPreview = false;
 
-allQuestionBank: any[] = [];   // full result
-pagedQuestionBank: any[] = []; // current page
+  difficultyStats: {
+    label: string;
+    count: number;
+    marks: number;
+  }[] = [];
 
+  reviewWarnings: string[] = [];
+
+  togglePreview() {
+    this.showPreview = !this.showPreview;
+  }
+
+  computeReviewStats() {
+    const levels = ['EASY', 'MEDIUM', 'HARD'];
+
+    this.difficultyStats = levels.map(level => {
+      const questions = this.selectedQuestions.filter(q =>
+        (q.difficulty || 'EASY') === level
+      );
+
+      return {
+        label: level,
+        count: questions.length,
+        marks: questions.reduce((s, q) => s + (q.marks || 0), 0)
+      };
+    });
+
+    this.reviewWarnings = [];
+
+    const totalNonEasy =
+      this.difficultyStats.find(d => d.label === 'MEDIUM')!.count +
+      this.difficultyStats.find(d => d.label === 'HARD')!.count;
+
+    if (totalNonEasy === 0) {
+      this.reviewWarnings.push('All questions are EASY.');
+    }
+
+    if (this.selectedQuestions.length < 5) {
+      this.reviewWarnings.push('Exam has very few questions.');
+    }
+
+    if (this.totalSelectedMarks() < this.examForm.value.examDetails.durationMinutes) {
+      this.reviewWarnings.push('Total marks are low compared to exam duration.');
+    }
+  }
 
   // ---------------- STEP 2: Selected Questions ----------------
   loadSelectedQuestions() {
@@ -90,13 +142,29 @@ pagedQuestionBank: any[] = []; // current page
     this.service.getQuestionsByExam(+this.examId).subscribe({
       next: (questions) => {
         this.selectedQuestions = questions || [];
+        this.selectedPageIndex = 0;
+        this.updatePagedSelectedQuestions();
         this.loadingSelectedQuestions = false;
+        this.computeReviewStats();
       },
       error: () => {
         this.loadingSelectedQuestions = false;
       }
     });
   }
+
+  updatePagedSelectedQuestions() {
+    const start = this.selectedPageIndex * this.selectedPageSize;
+    const end = start + this.selectedPageSize;
+    this.pagedSelectedQuestions = this.selectedQuestions.slice(start, end);
+  }
+
+  onSelectedPageChange(event: any) {
+    this.selectedPageIndex = event.pageIndex;
+    this.selectedPageSize = event.pageSize;
+    this.updatePagedSelectedQuestions();
+  }
+
 
 
   toggleSelection(q: any) {
@@ -165,6 +233,8 @@ pagedQuestionBank: any[] = []; // current page
           this.loadSelectedQuestions();
 
           this.addingFromBank = false;
+
+          this.computeReviewStats();
         },
         error: () => {
           this.addingFromBank = false;
@@ -197,8 +267,8 @@ pagedQuestionBank: any[] = []; // current page
     this.questionBankService.search(this.filters).subscribe({
       next: (res) => {
         this.allQuestionBank = res || [];
-this.pageIndex = 0;
-this.updatePagedQuestions();
+        this.pageIndex = 0;
+        this.updatePagedQuestions();
 
         this.loadingQuestionBank = false;
       },
@@ -209,16 +279,16 @@ this.updatePagedQuestions();
   }
 
   updatePagedQuestions() {
-  const start = this.pageIndex * this.pageSize;
-  const end = start + this.pageSize;
-  this.pagedQuestionBank = this.allQuestionBank.slice(start, end);
-}
+    const start = this.pageIndex * this.pageSize;
+    const end = start + this.pageSize;
+    this.pagedQuestionBank = this.allQuestionBank.slice(start, end);
+  }
 
-onPageChange(event: any) {
-  this.pageIndex = event.pageIndex;
-  this.pageSize = event.pageSize;
-  this.updatePagedQuestions();
-}
+  onPageChange(event: any) {
+    this.pageIndex = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.updatePagedQuestions();
+  }
 
 
   onSearchChange(value: string) {
@@ -502,5 +572,59 @@ onPageChange(event: any) {
     const { title, durationMinutes } = this.examForm.controls;
     return title.valid && durationMinutes.valid;
   }
+
+  saveAndNext(stepper: MatStepper) {
+  // CREATE MODE → always save
+  if (!this.isEditMode) {
+    this.createExamAndNext(stepper);
+    return;
+  }
+
+  // EDIT MODE + NOT MODIFIED → skip API
+  if (!this.examDetailsGroup.dirty) {
+    stepper.next();
+    return;
+  }
+
+  // EDIT MODE + MODIFIED → update
+  this.updateExamAndNext(stepper);
+}
+
+createExamAndNext(stepper: MatStepper) {
+  const payload = {
+    ...this.examForm.value.examDetails,
+    status: 'DRAFT'
+  };
+
+  this.submitting = true;
+
+  this.service.createExam(payload).subscribe({
+    next: (res) => {
+      this.examId = String(res.id); // IMPORTANT
+      this.isEditMode = true;
+      this.examDetailsGroup.markAsPristine();
+      this.submitting = false;
+      stepper.next();
+    },
+    error: () => this.submitting = false
+  });
+}
+
+updateExamAndNext(stepper: MatStepper) {
+  const payload = this.examForm.value.examDetails;
+
+  this.submitting = true;
+
+  this.service.updateExam(this.examId, payload).subscribe({
+    next: () => {
+      this.examDetailsGroup.markAsPristine();
+      this.submitting = false;
+      stepper.next();
+    },
+    error: () => this.submitting = false
+  });
+}
+
+
 
 }

@@ -6,7 +6,7 @@
     </h2>
 
     <form [formGroup]="examForm">
-      <mat-horizontal-stepper linear>
+      <mat-horizontal-stepper linear #stepper>
 
         <!-- STEP 1: EXAM DETAILS -->
         <mat-step [stepControl]="examDetailsGroup">
@@ -37,11 +37,12 @@
 
           </div>
 
-          <div class="step-actions">
-            <button mat-raised-button color="primary" (click)="saveExam()">
-              Save
-            </button>
-            <button mat-raised-button color="primary" matStepperNext style="margin-left: 5px;">
+          <div class="step-actions-right">
+            <button
+              mat-raised-button
+              color="primary"
+              (click)="saveAndNext(stepper)"
+              [disabled]="examDetailsGroup.invalid || submitting">
               Next
             </button>
           </div>
@@ -145,13 +146,9 @@
                 <p>Loading question bank...</p>
               </ng-template>
 
-              <mat-paginator
-  [length]="allQuestionBank.length"
-  [pageSize]="pageSize"
-  [pageIndex]="pageIndex"
-  [pageSizeOptions]="[5, 10, 20]"
-  (page)="onPageChange($event)">
-</mat-paginator>
+              <mat-paginator *ngIf="allQuestionBank.length > 0" [length]="allQuestionBank.length" [pageSize]="pageSize"
+                [pageIndex]="pageIndex" [pageSizeOptions]="[5, 10, 20]" (page)="onPageChange($event)">
+              </mat-paginator>
 
             </div>
 
@@ -174,9 +171,9 @@
                   No questions selected yet.
                 </div>
 
-                <div class="selected-item" *ngFor="let q of selectedQuestions; let i = index">
+                <div class="selected-item" *ngFor="let q of pagedSelectedQuestions; let i = index">
                   <span>
-                    {{ i + 1 }}. {{ q.text }} ({{ q.marks }})
+                    {{ selectedPageIndex * selectedPageSize + i + 1 }}. {{ q.text }} ({{ q.marks }})
                   </span>
 
                   <div class="actions">
@@ -194,6 +191,12 @@
               <ng-template #loadingTpl>
                 <p>Loading selected questions...</p>
               </ng-template>
+
+              <mat-paginator *ngIf="selectedQuestions.length > 0" [length]="selectedQuestions.length"
+                [pageSize]="selectedPageSize" [pageIndex]="selectedPageIndex" [pageSizeOptions]="[5, 10, 20]"
+                (page)="onSelectedPageChange($event)">
+              </mat-paginator>
+
             </div>
 
 
@@ -211,48 +214,122 @@
 
 
         <!-- STEP 3: REVIEW -->
+        <!-- STEP 3: REVIEW -->
         <mat-step>
           <ng-template matStepLabel>Review</ng-template>
 
-          <mat-card class="section-card">
-            <div class="review-item">
-              <strong>Title</strong>
-              <span>{{ examForm.value.examDetails.title }}</span>
-            </div>
-            <div class="review-item">
-              <strong>Duration</strong>
-              <span>{{ examForm.value.examDetails.durationMinutes }} minutes</span>
-            </div>
-            <div class="review-item">
-              <strong>Total Questions</strong>
-              <span>{{ selectedQuestions.length }}</span>
-            </div>
-            <div class="review-item">
-              <strong>Total Marks</strong>
-              <span>{{ totalSelectedMarks() }}</span>
+          <!-- SUMMARY -->
+          <mat-card class="section-card review-summary">
+            <div class="summary-grid">
+
+              <div class="label">Title</div>
+              <div></div>
+              <div class="value">{{ examForm.value.examDetails.title }}</div>
+
+              <div class="label">Duration</div>
+              <div></div>
+              <div class="value">{{ examForm.value.examDetails.durationMinutes }} minutes</div>
+
+              <div class="label">Total Questions</div>
+              <div></div>
+              <div class="value">{{ selectedQuestions.length }}</div>
+
+              <div class="label">Total Marks</div>
+              <div></div>
+              <div class="value">{{ totalSelectedMarks() }}</div>
+
             </div>
           </mat-card>
 
-          <div class="step-actions">
+
+          <!-- MARKS + DIFFICULTY BREAKDOWN -->
+          <mat-card class="section-card">
+            <h4>Marks & Difficulty Breakdown</h4>
+
+            <div class="breakdown-item" *ngFor="let d of difficultyStats">
+              <span>{{ d.label }}</span>
+              <span>{{ d.count }} questions • {{ d.marks }} marks</span>
+            </div>
+          </mat-card>
+
+          <!-- SOFT WARNINGS -->
+          <mat-card class="section-card warning-card" *ngIf="reviewWarnings.length > 0">
+            <h4>⚠️ Review Warnings</h4>
+            <ul>
+              <li *ngFor="let w of reviewWarnings">{{ w }}</li>
+            </ul>
+          </mat-card>
+
+          <!-- QUESTION PREVIEW -->
+          <mat-card class="section-card">
+            <h4>
+              Questions ({{ selectedQuestions.length }})
+              <button mat-button color="primary" (click)="togglePreview()">
+                {{ showPreview ? 'Hide' : 'Show' }}
+              </button>
+            </h4>
+
+            <div *ngIf="showPreview" class="question-preview">
+              <div *ngFor="let q of selectedQuestions; let i = index" class="preview-item">
+                {{ i + 1 }}. {{ q.text }}
+              </div>
+            </div>
+          </mat-card>
+
+          <!-- STICKY FOOTER -->
+          <div class="review-footer">
             <button mat-button matStepperPrevious>Back</button>
-            <button mat-raised-button color="accent" matStepperNext>
-              Publish
-            </button>
+
+            <div class="footer-right">
+              <span class="lock-note">
+                🔒 Once published, this exam cannot be edited
+              </span>
+              <button mat-raised-button color="primary" matStepperNext>
+                Publish
+              </button>
+            </div>
           </div>
         </mat-step>
+
 
         <!-- STEP 4: PUBLISH -->
         <mat-step>
           <ng-template matStepLabel>Publish</ng-template>
 
+          <!-- FINAL WARNING -->
           <mat-card class="section-card publish-card">
-            <p>Once published, the exam cannot be edited.</p>
+            <h4>Final Confirmation</h4>
+            <p>
+              Once published, this exam will be <strong>locked</strong> and cannot be edited.
+              Please review all details carefully before proceeding.
+            </p>
           </mat-card>
 
-          <button mat-button matStepperPrevious>Back</button>
-          <button mat-raised-button color="primary" (click)="submit()">
-            {{ isEditMode ? 'Update Exam' : 'Publish Exam' }}
-          </button>
+          <!-- WHAT HAPPENS NEXT -->
+          <mat-card class="section-card">
+            <h4>After Publishing</h4>
+
+            <ul class="publish-info">
+              <li>✔ Exam becomes visible to students</li>
+              <li>✔ Students can start attempting the exam</li>
+              <li>✔ You can view attempts and performance analytics</li>
+              <li>✔ Questions and settings cannot be changed</li>
+            </ul>
+          </mat-card>
+
+          <!-- FINAL ACTIONS -->
+          <div class="review-footer">
+            <button mat-button matStepperPrevious>Back</button>
+
+            <div class="footer-right">
+              <span class="lock-note">
+                🔒 This action is irreversible
+              </span>
+              <button mat-raised-button color="primary" (click)="submit()">
+                {{ isEditMode ? 'Update Exam' : 'Publish Exam' }}
+              </button>
+            </div>
+          </div>
         </mat-step>
 
       </mat-horizontal-stepper>
