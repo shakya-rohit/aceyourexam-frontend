@@ -94,10 +94,45 @@
 
     <!-- ================= QUESTION LIST ================= -->
     <mat-card class="section-card">
-      <h3>All Questions</h3>
+      <div class="section-header">
+        <h3>All Questions</h3>
+        <span class="result-count">
+          Showing {{ questions.length }} of {{ totalElements }}
+        </span>
+      </div>
+
+
+      <div class="filter-bar">
+        <mat-form-field appearance="outline">
+          <mat-label>Subject</mat-label>
+          <mat-select [(ngModel)]="filters.subject" (selectionChange)="onFilterChange()">
+            <mat-option value="">All</mat-option>
+            <mat-option *ngFor="let s of subjects" [value]="s.name">
+              {{ s.name }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Difficulty</mat-label>
+          <mat-select [(ngModel)]="filters.difficulty" (selectionChange)="onFilterChange()">
+            <mat-option value="">All</mat-option>
+            <mat-option *ngFor="let d of difficulties" [value]="d">
+              {{ d }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="search">
+          <mat-label>Search</mat-label>
+          <input matInput placeholder="Search questions" [(ngModel)]="filters.q" (keyup)="onFilterChange()" />
+        </mat-form-field>
+      </div>
+
+      <mat-divider></mat-divider>
 
       <div *ngIf="questions.length === 0" class="empty-state">
-        No questions yet. Add your first question to the bank.
+        No questions match the current filters.
       </div>
 
       <table *ngIf="questions.length > 0" class="qb-table">
@@ -115,7 +150,12 @@
             <td>{{ q.text }}</td>
             <td>{{ q.subject }}</td>
             <td>{{ q.topic }}</td>
-            <td>{{ q.difficulty }}</td>
+            <td>
+              <span class="difficulty-chip {{ q.difficulty | lowercase }}">
+                {{ q.difficulty }}
+              </span>
+            </td>
+
             <td class="actions">
               <button mat-icon-button (click)="edit(q)">
                 <mat-icon>edit</mat-icon>
@@ -127,6 +167,14 @@
           </tr>
         </tbody>
       </table>
+
+      <div class="paginator-wrapper">
+        <mat-paginator [length]="totalElements" [pageSize]="pageSize" [pageSizeOptions]="[10, 20, 50]"
+          (page)="onPageChange($event)">
+        </mat-paginator>
+      </div>
+
+
     </mat-card>
 
   </div>

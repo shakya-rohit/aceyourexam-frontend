@@ -62,5 +62,20 @@ export class QuestionBankService {
         });
     }
 
+    getPaged(params: {
+        page: number;
+        size: number;
+        subject?: string;
+        topic?: string;
+        difficulty?: string;
+        q?: string;
+        }) {
+        return this.http.get<any>(`${this.baseUrl}/question-bank/paged`, {
+            headers: this.getAuthHeaders(),
+            params: params as any
+        });
+    }
+
+
 
 }

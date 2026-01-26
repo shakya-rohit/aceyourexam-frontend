@@ -8,9 +8,12 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
 import { MatIconModule } from '@angular/material/icon';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { FormsModule } from '@angular/forms';
 
 import { QuestionBankService } from '../../services/question-bank.service';
 import { Subject, SubjectService, Topic } from '../../services/subject.service';
+import { MatDividerModule } from "@angular/material/divider";
 
 @Component({
   selector: 'app-question-bank',
@@ -23,7 +26,10 @@ import { Subject, SubjectService, Topic } from '../../services/subject.service';
     MatInputModule,
     MatButtonModule,
     MatSelectModule,
-    MatIconModule
+    MatIconModule,
+    MatPaginatorModule,
+    FormsModule,
+    MatDividerModule
   ],
   templateUrl: './question-bank.component.html',
   styleUrls: ['./question-bank.component.css']
@@ -43,6 +49,20 @@ export class QuestionBankComponent implements OnInit {
 
   selectedSubjectId: number | null = null;
   selectedTopicId: number | null = null;
+
+  // pagination
+  page = 0;
+  pageSize = 10;
+  totalElements = 0;
+
+  // filters (only for listing)
+  filters = {
+    subject: '',
+    topic: '',
+    difficulty: '',
+    q: ''
+  };
+
 
 
   constructor(
@@ -72,10 +92,27 @@ export class QuestionBankComponent implements OnInit {
   }
 
   loadQuestions() {
-    this.questionBankService.getAll().subscribe(res => {
-      this.questions = res || [];
+    this.questionBankService.getPaged({
+      page: this.page,
+      size: this.pageSize,
+      ...this.filters
+    }).subscribe(res => {
+      this.questions = res.content || [];
+      this.totalElements = res.totalElements;
     });
   }
+
+  onPageChange(event: PageEvent) {
+    this.page = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.loadQuestions();
+  }
+
+  onFilterChange() {
+    this.page = 0;
+    this.loadQuestions();
+  }
+
 
   submit() {
     if (this.questionForm.invalid) return;
