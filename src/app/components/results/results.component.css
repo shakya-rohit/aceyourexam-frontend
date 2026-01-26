@@ -28,3 +28,19 @@
   color: #00796b;
   margin-top: 0.5rem;
 }
+
+.result-card {
+  position: relative;
+}
+
+.score-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-weight: 600;
+}
+
+.excellent { border-left: 5px solid #2e7d32; }
+.good { border-left: 5px solid #0288d1; }
+.average { border-left: 5px solid #f9a825; }
+.poor { border-left: 5px solid #c62828; }

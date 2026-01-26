@@ -7,6 +7,11 @@ import { BaseChartDirective } from 'ng2-charts';
 import { ChartConfiguration } from 'chart.js';
 import { ApiService } from '../../services/api.service';
 
+interface Insight {
+  type: 'positive' | 'warning' | 'negative';
+  message: string;
+}
+
 @Component({
   selector: 'app-analysis',
   standalone: true,
@@ -19,6 +24,8 @@ export class AnalysisComponent implements OnInit {
   attemptData: any;
   pieChartData!: ChartConfiguration<'doughnut'>['data'];
   barChartData!: ChartConfiguration<'bar'>['data'];
+
+  insights: Insight[] = [];
 
   constructor(private route: ActivatedRoute, private api: ApiService, private router: Router) { }
 
@@ -37,6 +44,8 @@ export class AnalysisComponent implements OnInit {
           accuracy: res.accuracy || this.calculateAccuracy(res)
         };
         this.prepareCharts(this.attemptData);
+        this.insights=res.insights;
+        // this.generateInsights(this.attemptData);
       },
       error: (err) => console.error('Error loading attempt', err)
     });
@@ -124,4 +133,6 @@ export class AnalysisComponent implements OnInit {
     responsive: true,
     maintainAspectRatio: false,
   };
+
+
 }

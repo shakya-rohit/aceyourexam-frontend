@@ -75,4 +75,12 @@ export class ResultsComponent implements OnInit {
       alert('No detailed data available for this attempt.');
     }
   }
+
+  getScoreClass(score: number) {
+  if (score >= 600) return 'excellent';
+  if (score >= 400) return 'good';
+  if (score >= 200) return 'average';
+  return 'poor';
+}
+
 }

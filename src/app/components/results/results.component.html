@@ -1,13 +1,17 @@
 <div class="results-container">
   <h2>Your Results 🧾</h2>
+<p class="subtitle">You have attempted {{ results.length }} exams</p>
+
 
   <ng-container *ngIf="results.length; else noResults">
     <div class="results-list">
       <mat-card
-        *ngFor="let r of results"
-        class="result-card"
-        (click)="viewAnalysis(r)"
-      >
+  *ngFor="let r of results"
+  class="result-card"
+  [ngClass]="getScoreClass(r.totalScore)"
+  (click)="viewAnalysis(r)"
+>
+
         <h3>{{ r.examTitle }}</h3>
         <p><strong>Score:</strong> {{ r.totalScore }} / 720</p>
         <p><strong>Date:</strong> {{ r.submittedAt }}</p>
@@ -17,8 +21,13 @@
   </ng-container>
 
   <ng-template #noResults>
-    <p>No exams taken yet! Give a test to see results here.</p>
-  </ng-template>
+  <p class="empty-state">
+    📭 No exams taken yet.  
+    <br />
+    Take your first exam to unlock performance insights!
+  </p>
+</ng-template>
+
 
   <button mat-raised-button color="primary" (click)="goToDashboard()" style="margin-top: 2rem;">
     Back to Dashboard
