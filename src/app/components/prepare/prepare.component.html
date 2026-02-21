@@ -1,19 +1,24 @@
-<!-- ================= CONFIG / RESULT ================= -->
 <div class="prepare-page" *ngIf="step !== 'TEST'">
   <mat-card class="prepare-card">
 
-    <!-- CONFIG -->
+    <!-- ================= CONFIG ================= -->
     <ng-container *ngIf="step === 'CONFIG'">
 
       <h2 class="title">Prepare Practice Test</h2>
 
+      <!-- Total Questions -->
       <div class="form-section">
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Total Questions</mat-label>
-          <input matInput type="number" [(ngModel)]="totalQuestions">
+          <input
+            matInput
+            type="number"
+            [(ngModel)]="totalQuestions"
+            (ngModelChange)="onTotalQuestionsChange()">
         </mat-form-field>
       </div>
 
+      <!-- Selection Mode -->
       <div class="form-section">
         <label class="section-label">Question Selection</label>
         <mat-radio-group [(ngModel)]="mode" class="radio-row">
@@ -22,6 +27,7 @@
         </mat-radio-group>
       </div>
 
+      <!-- Feedback Mode -->
       <div class="form-section">
         <label class="section-label">Feedback Mode</label>
         <mat-radio-group [(ngModel)]="feedbackMode" class="radio-row">
@@ -30,13 +36,53 @@
         </mat-radio-group>
       </div>
 
-      <button mat-raised-button color="primary" class="start-btn" (click)="startTest()">
+      <!-- Time Mode -->
+      <div class="form-section">
+        <label class="section-label">Time Mode</label>
+        <mat-radio-group [(ngModel)]="timeMode" class="radio-row">
+          <mat-radio-button value="UNTIMED">No Time Limit</mat-radio-button>
+          <mat-radio-button value="TIMED">Timed</mat-radio-button>
+        </mat-radio-group>
+
+        <div *ngIf="timeMode === 'TIMED'" style="margin-top:10px;">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Time Limit (minutes)</mat-label>
+            <input matInput type="number" [(ngModel)]="timeLimitMinutes">
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Start Button -->
+      <button
+        mat-raised-button
+        color="primary"
+        class="start-btn"
+        [disabled]="totalQuestions <= 0"
+        (click)="startTest()">
         Start Test
       </button>
 
+      <!-- ================= QUICK TOPIC PRACTICE ================= -->
+      <div class="topic-section">
+        <h3 class="topic-title">Quick Topic Practice</h3>
+
+        <div class="topic-grid">
+          <div
+            class="topic-card"
+            *ngFor="let topic of topics"
+            (click)="startTopicPractice(topic.name)">
+
+            <div class="topic-icon">{{ topic.icon }}</div>
+            <div class="topic-name">{{ topic.name }}</div>
+            <div class="topic-sub">10 Questions</div>
+
+          </div>
+        </div>
+      </div>
+
     </ng-container>
 
-    <!-- RESULT -->
+    <!-- ================= RESULT ================= -->
     <ng-container *ngIf="step === 'RESULT'">
 
       <h2 class="title">Result</h2>
@@ -47,13 +93,18 @@
       <p>Wrong: {{ wrong }}</p>
       <p>Skipped: {{ total - (correct + wrong) }}</p>
 
-      <button mat-button (click)="restart()">Practice Again</button>
+      <button mat-button (click)="restart()">
+        Practice Again
+      </button>
 
     </ng-container>
 
   </mat-card>
 </div>
 
-<!-- ================= TEST (FULL SCREEN) ================= -->
-<app-practice-runner *ngIf="step === 'TEST'" [questions]="questions" (finished)="onPracticeFinished($event)">
+<!-- ================= TEST ================= -->
+<app-practice-runner
+  *ngIf="step === 'TEST'"
+  [questions]="questions"
+  (finished)="onPracticeFinished($event)">
 </app-practice-runner>

@@ -5,6 +5,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatInputModule } from '@angular/material/input';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { PracticeRunnerComponent } from "../practice-runner/practice-runner.component";
 import { UiStateService } from '../../services/ui-state.service';
 import { QuestionBankService } from '../../services/question-bank.service';
@@ -21,6 +22,7 @@ type PrepareStep = 'CONFIG' | 'TEST' | 'RESULT';
     MatButtonModule,
     MatRadioModule,
     MatInputModule,
+    MatCheckboxModule,
     PracticeRunnerComponent
   ],
   templateUrl: './prepare.component.html',
@@ -30,57 +32,58 @@ export class PrepareComponent {
 
   step: PrepareStep = 'CONFIG';
 
-  // CONFIG
+  // BASIC CONFIG
   totalQuestions = 10;
   mode: 'RANDOM' | 'DIFFICULTY' = 'RANDOM';
   feedbackMode: 'INSTANT' | 'END' = 'END';
 
-  difficulty = {
-    EASY: 20,
-    MEDIUM: 40,
-    HARD: 40
-  };
+  // TIME CONFIG
+  timeMode: 'UNTIMED' | 'TIMED' = 'TIMED';
+  timeLimitMinutes = 10;
 
-  // TEST
-  currentIndex = 0;
+  // Quick topic cards
+topics = [
+  { name: 'Optics', icon: '🔬' },
+  { name: 'Thermodynamics', icon: '🔥' },
+  { name: 'Magnetism', icon: '🧲' },
+  { name: 'Organic Chemistry', icon: '🧪' },
+  { name: 'Human Physiology', icon: '🧠' }
+];
 
-  questions = [
-    {
-      id: 1,
-      text: 'What is the unit of force?',
-      options: ['Newton', 'Pascal', 'Joule', 'Watt'],
-      correctOptionIndex: 0,
-      explanation: 'Force is measured in Newton.',
-      answered: false,
-      selectedOptionIndex: -1
-    },
-    {
-      id: 2,
-      text: 'Speed of light in vacuum is?',
-      options: ['3×10⁸ m/s', '3×10⁶ m/s', '3×10⁵ m/s', 'None'],
-      correctOptionIndex: 0,
-      explanation: 'Speed of light in vacuum is 3×10⁸ m/s.',
-      answered: false,
-      selectedOptionIndex: -1
-    }
-  ];
+  // SUBJECT CONFIG
+  // availableSubjects = ['Physics', 'Chemistry', 'Biology'];
+  // selectedSubjects: string[] = ['Physics', 'Chemistry', 'Biology'];
+
+  questions: any[] = [];
 
   correct = 0;
-  total: any;
-  wrong: any;
-  percentage: any;
+  total = 0;
+  wrong = 0;
+  percentage = 0;
 
-  constructor(private uiState: UiStateService, private questionBankService: QuestionBankService) { }
+  constructor(
+    private uiState: UiStateService,
+    private questionBankService: QuestionBankService
+  ) { }
+
+  get estimatedTime(): number {
+    if (this.timeMode === 'UNTIMED') return 0;
+    return this.timeLimitMinutes;
+  }
 
   startTest() {
+
+    if (this.totalQuestions <= 0) {
+      return;
+    }
 
     const request = {
       examType: 'NEET',
       totalQuestions: this.totalQuestions,
-      mode: this.mode
-      // difficultySplit: this.mode === 'DIFFICULTY'
-      //   ? this.calculateDifficultySplit()
-      //   : null
+      mode: this.mode,
+      timeLimitMinutes: this.timeMode === 'TIMED'
+        ? this.timeLimitMinutes
+        : null
     };
 
     this.questionBankService
@@ -90,45 +93,6 @@ export class PrepareComponent {
         this.uiState.enterTestMode();
         this.step = 'TEST';
       });
-
-  }
-
-  get currentQuestion() {
-    return this.questions[this.currentIndex];
-  }
-
-  selectAnswer(optionIndex: number) {
-    const q = this.currentQuestion;
-    if (q.answered) return;
-
-    q.selectedOptionIndex = optionIndex;
-    q.answered = true;
-  }
-
-  next() {
-    if (this.currentIndex < this.questions.length - 1) {
-      this.currentIndex++;
-    } else {
-      this.submit();
-    }
-  }
-
-  submit() {
-    this.correct = this.questions.filter(
-      q => q.selectedOptionIndex === q.correctOptionIndex
-    ).length;
-
-    this.step = 'RESULT';
-  }
-
-  restart() {
-    this.questions.forEach(q => {
-      q.answered = false;
-      q.selectedOptionIndex = -1;
-    });
-
-    this.uiState.exitTestMode();
-    this.step = 'CONFIG';
   }
 
   onPracticeFinished(result: any) {
@@ -141,8 +105,36 @@ export class PrepareComponent {
     this.step = 'RESULT';
   }
 
+  restart() {
+    this.uiState.exitTestMode();
+    this.step = 'CONFIG';
+  }
+
   ngOnDestroy(): void {
     this.uiState.exitTestMode();
   }
 
+  onTotalQuestionsChange() {
+    if (this.timeMode === 'TIMED') {
+      this.timeLimitMinutes = this.totalQuestions;
+    }
+  }
+
+  startTopicPractice(topicName: string) {
+
+  const request = {
+    examType: 'NEET',
+    totalQuestions: 10,
+    mode: 'RANDOM',
+    topic: topicName
+  };
+
+  this.questionBankService
+    .getPracticeQuestions(request)
+    .subscribe(qs => {
+      this.questions = qs;
+      this.uiState.enterTestMode();
+      this.step = 'TEST';
+    });
+}
 }
