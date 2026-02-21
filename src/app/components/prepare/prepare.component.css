@@ -1,0 +1,116 @@
+.prepare-page {
+  display: flex;
+  justify-content: center;
+  padding: 2.5rem 1rem;
+}
+
+.prepare-card {
+  width: 100%;
+  max-width: 640px;
+  padding: 2rem;
+  border-radius: 8px;
+}
+
+/* ===== CONFIG ===== */
+
+.title {
+  text-align: center;
+  margin-bottom: 2rem;
+  font-weight: 600;
+}
+
+.form-section {
+  margin-bottom: 1.5rem;
+}
+
+.section-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: #555;
+}
+
+.radio-row {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.start-btn {
+  width: 100%;
+  height: 44px;
+}
+
+/* ===== QUESTION (EXAM-RUNNER STYLE) ===== */
+
+.question-box {
+  background: white;
+  border: 1px solid #ddd;
+  padding: 1.25rem;
+  border-radius: 4px;
+}
+
+.question-meta {
+  font-weight: bold;
+  margin-bottom: 0.75rem;
+}
+
+.question-text {
+  font-size: 1.05rem;
+  margin-bottom: 1rem;
+}
+
+.options {
+  margin-top: 0.5rem;
+}
+
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0.6rem 0;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.option:hover {
+  background: #f5f7fa;
+}
+
+.option.correct {
+  background: #e8f5e9;
+  border-left: 4px solid #2e7d32;
+}
+
+.option.wrong {
+  background: #fdecea;
+  border-left: 4px solid #c62828;
+}
+
+.explanation {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+/* ===== NAV ===== */
+
+.nav-buttons {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn.primary {
+  background: #1976d2;
+  color: white;
+  border: none;
+  padding: 0.45rem 1.2rem;
+  border-radius: 4px;
+  cursor: pointer;
+}

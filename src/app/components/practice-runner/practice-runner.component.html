@@ -1,0 +1,103 @@
+<div class="runner-container" *ngIf="questions.length > 0">
+
+    <!-- TOP BAR -->
+    <div class="runner-header">
+        <div class="header-left">
+            <!-- <span class="brand">AceYourExam</span> -->
+            <span class="exam-name">{{ 'Sample Test' }}</span>
+        </div>
+
+        <div class="header-center">
+            ⏱ <strong>{{ formattedTime }}</strong>
+        </div>
+
+        <div class="header-right">
+            <button class="submit-btn" (click)="submitExam()">Submit</button>
+        </div>
+
+    </div>
+
+    <!-- BODY -->
+    <div class="runner-body">
+
+        <!-- QUESTION AREA -->
+        <div class="question-panel">
+
+            <div class="section-tabs">
+                <button *ngFor="let sec of sections; let i = index" [class.active]="i === activeSectionIndex"
+                    (click)="switchSection(i)">
+                    {{ sec.name }}
+                </button>
+            </div>
+
+
+            <div class="question-box">
+                <div class="question-meta">
+                    <span>Q{{ currentIndex + 1 }}</span>
+                    <span class="marks">+{{ currentQuestion.marks }} / −1</span>
+                </div>
+
+                <div class="question-text">
+                    {{ currentQuestion.text }}
+                </div>
+
+                <div class="options">
+                    <label class="option" *ngFor="let opt of currentQuestion.options; let i = index"
+                        [class.correct]="currentQuestion.answered && i === currentQuestion.correctOptionIndex"
+                        [class.wrong]="currentQuestion.answered &&
+                 i === currentQuestion.selectedOptionIndex &&
+                 i !== currentQuestion.correctOptionIndex">
+
+                        <input type="radio" [disabled]="currentQuestion.answered"
+                            (change)="selectAnswer(currentQuestion.id, i)" />
+
+                        <span>{{ opt }}</span>
+                    </label>
+
+                </div>
+
+                <div class="explanation" *ngIf="currentQuestion.answered">
+                    <strong>Explanation:</strong>
+                    {{ currentQuestion.explanation }}
+                </div>
+
+            </div>
+
+            <!-- NAVIGATION -->
+            <div class="nav-buttons">
+                <button class="btn secondary" (click)="prev()" [disabled]="currentIndex === 0">
+                    Previous
+                </button>
+
+                <button class="btn review" (click)="toggleReview()">
+                    {{ isMarkedForReview(currentQuestion.id) ? 'Unmark Review' : 'Mark for Review' }}
+                </button>
+
+                <button class="btn primary" (click)="next()">
+                    Save & Next
+                </button>
+            </div>
+
+
+        </div>
+
+        <!-- QUESTION PALETTE -->
+        <div class="palette-panel">
+            <h4>Questions</h4>
+
+            <div class="palette-grid">
+                <button *ngFor="let qIndex of sections[activeSectionIndex].questionIndexes; trackBy: trackByIndex"
+                    class="palette-btn" [class.not-visited]="!visited[questions[qIndex].id]"
+                    [class.answered]="answers[questions[qIndex].id] !== undefined"
+                    [class.review]="markedForReview[questions[qIndex].id]" [class.active]="qIndex === currentIndex"
+                    (click)="goTo(qIndex)">
+                    {{ qIndex + 1 }}
+                </button>
+
+
+
+            </div>
+        </div>
+
+    </div>
+</div>

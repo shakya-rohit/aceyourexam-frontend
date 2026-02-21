@@ -94,6 +94,12 @@ export const routes: Routes = [
         .then(m => m.QuestionBankComponent)
   },
   {
+    path: 'prepare',
+    loadComponent: () =>
+      import('./components/prepare/prepare.component')
+        .then(m => m.PrepareComponent)
+  },
+  {
     path: '**',
     redirectTo: ''
   }

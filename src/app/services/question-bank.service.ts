@@ -69,10 +69,16 @@ export class QuestionBankService {
         topic?: string;
         difficulty?: string;
         q?: string;
-        }) {
+    }) {
         return this.http.get<any>(`${this.baseUrl}/question-bank/paged`, {
             headers: this.getAuthHeaders(),
             params: params as any
+        });
+    }
+
+    getPracticeQuestions(requestBody: any) {
+        return this.http.post<any[]>(`${this.baseUrl}/prepare/fetch-questions`, requestBody, {
+            headers: this.getAuthHeaders()
         });
     }
 

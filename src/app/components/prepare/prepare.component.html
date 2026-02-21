@@ -1,0 +1,59 @@
+<!-- ================= CONFIG / RESULT ================= -->
+<div class="prepare-page" *ngIf="step !== 'TEST'">
+  <mat-card class="prepare-card">
+
+    <!-- CONFIG -->
+    <ng-container *ngIf="step === 'CONFIG'">
+
+      <h2 class="title">Prepare Practice Test</h2>
+
+      <div class="form-section">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Total Questions</mat-label>
+          <input matInput type="number" [(ngModel)]="totalQuestions">
+        </mat-form-field>
+      </div>
+
+      <div class="form-section">
+        <label class="section-label">Question Selection</label>
+        <mat-radio-group [(ngModel)]="mode" class="radio-row">
+          <mat-radio-button value="RANDOM">Random</mat-radio-button>
+          <mat-radio-button value="DIFFICULTY">Difficulty Based</mat-radio-button>
+        </mat-radio-group>
+      </div>
+
+      <div class="form-section">
+        <label class="section-label">Feedback Mode</label>
+        <mat-radio-group [(ngModel)]="feedbackMode" class="radio-row">
+          <mat-radio-button value="INSTANT">Instant Feedback</mat-radio-button>
+          <mat-radio-button value="END">Feedback at End</mat-radio-button>
+        </mat-radio-group>
+      </div>
+
+      <button mat-raised-button color="primary" class="start-btn" (click)="startTest()">
+        Start Test
+      </button>
+
+    </ng-container>
+
+    <!-- RESULT -->
+    <ng-container *ngIf="step === 'RESULT'">
+
+      <h2 class="title">Result</h2>
+
+      <h2>{{ percentage }}%</h2>
+
+      <p>Correct: {{ correct }}</p>
+      <p>Wrong: {{ wrong }}</p>
+      <p>Skipped: {{ total - (correct + wrong) }}</p>
+
+      <button mat-button (click)="restart()">Practice Again</button>
+
+    </ng-container>
+
+  </mat-card>
+</div>
+
+<!-- ================= TEST (FULL SCREEN) ================= -->
+<app-practice-runner *ngIf="step === 'TEST'" [questions]="questions" (finished)="onPracticeFinished($event)">
+</app-practice-runner>
