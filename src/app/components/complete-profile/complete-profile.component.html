@@ -1,0 +1,40 @@
+<div class="complete-page">
+  <mat-card class="complete-card">
+
+    <h2 class="title">Complete Your Profile</h2>
+    <p class="subtitle">
+      Select the exam you are preparing for to personalize your experience.
+    </p>
+
+    <!-- Loading -->
+    <div *ngIf="isLoading" class="center">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+
+    <!-- Exam Selection -->
+    <div *ngIf="!isLoading">
+
+      <mat-radio-group [(ngModel)]="selectedExamTypeId" class="exam-options">
+        <mat-radio-button
+          *ngFor="let exam of examTypes"
+          [value]="exam.id">
+          {{ exam.name }}
+        </mat-radio-button>
+      </mat-radio-group>
+
+      <button
+        mat-raised-button
+        color="primary"
+        class="save-btn"
+        [disabled]="!selectedExamTypeId || isSaving"
+        (click)="saveProfile()">
+
+        <span *ngIf="!isSaving">Continue</span>
+        <span *ngIf="isSaving">Saving...</span>
+
+      </button>
+
+    </div>
+
+  </mat-card>
+</div>

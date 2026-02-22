@@ -100,6 +100,12 @@ export const routes: Routes = [
         .then(m => m.PrepareComponent)
   },
   {
+    path: 'complete-profile',
+    loadComponent: () =>
+      import('./components/complete-profile/complete-profile.component')
+        .then(m => m.CompleteProfileComponent)
+  },
+  {
     path: '**',
     redirectTo: ''
   }

@@ -183,6 +183,17 @@ export class ApiService {
     );
   }
 
+  completeProfile(payload: any): Observable<any> {
+    return this.http.put<any>(`${this.baseUrl}/student/auth/complete-profile`, payload, {
+      headers: this.getAuthHeaders()
+    }).pipe(
+      catchError(err => {
+        console.error('complete profile failed', err);
+        throw err;
+      })
+    );
+  }
+
   // Upload avatar (multipart/form-data)
   uploadAvatar(fd: FormData): Observable<any> {
     return this.http.post(`${this.baseUrl}/student/auth/me/avatar`, fd, {

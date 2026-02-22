@@ -59,7 +59,12 @@ export class AuthComponent implements OnInit {
             localStorage.setItem('AYE_TOKEN', res.token);
             localStorage.setItem('AYE_USER', JSON.stringify(res));
             this.api.setLoginStatus(true);
-            // alert('Login successful!');
+            
+            if (res.examTypeId === null || res.examTypeId === undefined) {
+              this.router.navigate(['/complete-profile']);
+              return;
+            }
+
             this.router.navigate(['/dashboard']);
           },
           error: (err) => {
@@ -109,7 +114,12 @@ export class AuthComponent implements OnInit {
         localStorage.setItem('AYE_TOKEN', res.token);
         localStorage.setItem('AYE_USER', JSON.stringify(res));
         this.api.setLoginStatus(true);
-        // alert('Login successful!');
+
+        if (res.examTypeId === null || res.examTypeId === undefined) {
+          this.router.navigate(['/complete-profile']);
+          return;
+        }
+
         this.router.navigate(['/dashboard']);
       },
       error: (err) => {
