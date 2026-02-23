@@ -24,6 +24,8 @@ import { state } from '@angular/animations';
 import { MatOption } from "@angular/material/core";
 import { MatSelect } from "@angular/material/select";
 import { QuestionBankService } from '../../services/question-bank.service';
+import { ExamTypesService } from '../../services/exam-types.service';
+import { Subject, SubjectService, Topic } from '../../services/subject.service';
 
 @Component({
   selector: 'app-create-exam',
@@ -94,6 +96,9 @@ export class CreateExamComponent implements OnInit {
   }[] = [];
 
   reviewWarnings: string[] = [];
+
+  examTypes: any[] = [];
+  isLoading: boolean = false;
 
   togglePreview() {
     this.showPreview = !this.showPreview;
@@ -339,10 +344,14 @@ export class CreateExamComponent implements OnInit {
     private fb: FormBuilder,
     private service: ApiService,
     private questionBankService: QuestionBankService,
+    private examTypeService: ExamTypesService,
+    private subjectService: SubjectService,
     private router: Router,
     private route: ActivatedRoute
   ) { }
 
+  subjects: Subject[] = [];
+  subjectToTopicMapping: Map<string, Topic[]> = new Map();
 
   ngOnInit(): void {
     this.examId = this.route.snapshot.paramMap.get('examId')!;
@@ -353,6 +362,7 @@ export class CreateExamComponent implements OnInit {
         title: ['', Validators.required],
         description: [''],
         durationMinutes: [60, [Validators.required, Validators.min(1)]],
+        examTypeId: [1, Validators.required]
       }),
       questions: this.fb.array([])
     });
@@ -367,6 +377,7 @@ export class CreateExamComponent implements OnInit {
     }
 
     this.loadQuestionBank();
+    this.fetchExamTypes();
 
 
   }
@@ -397,7 +408,8 @@ export class CreateExamComponent implements OnInit {
       this.examForm.get('examDetails')?.patchValue({
         title: exam.title,
         description: exam.description,
-        durationMinutes: exam.durationMinutes
+        durationMinutes: exam.durationMinutes,
+        examTypeId: exam.examTypeId
       });
     });
 
@@ -574,56 +586,95 @@ export class CreateExamComponent implements OnInit {
   }
 
   saveAndNext(stepper: MatStepper) {
-  // CREATE MODE → always save
-  if (!this.isEditMode) {
-    this.createExamAndNext(stepper);
-    return;
+    this.fetchSubjects();
+
+    // CREATE MODE → always save
+    if (!this.isEditMode) {
+      this.createExamAndNext(stepper);
+      return;
+    }
+
+    // EDIT MODE + NOT MODIFIED → skip API
+    if (!this.examDetailsGroup.dirty) {
+      stepper.next();
+      return;
+    }
+
+    // EDIT MODE + MODIFIED → update
+    this.updateExamAndNext(stepper);
   }
 
-  // EDIT MODE + NOT MODIFIED → skip API
-  if (!this.examDetailsGroup.dirty) {
-    stepper.next();
-    return;
+  createExamAndNext(stepper: MatStepper) {
+    const payload = {
+      ...this.examForm.value.examDetails,
+      status: 'DRAFT'
+    };
+
+    this.submitting = true;
+
+    this.service.createExam(payload).subscribe({
+      next: (res) => {
+        this.examId = String(res.id); // IMPORTANT
+        this.isEditMode = true;
+        this.examDetailsGroup.markAsPristine();
+        this.submitting = false;
+        stepper.next();
+      },
+      error: () => this.submitting = false
+    });
   }
 
-  // EDIT MODE + MODIFIED → update
-  this.updateExamAndNext(stepper);
-}
+  updateExamAndNext(stepper: MatStepper) {
+    const payload = this.examForm.value.examDetails;
 
-createExamAndNext(stepper: MatStepper) {
-  const payload = {
-    ...this.examForm.value.examDetails,
-    status: 'DRAFT'
-  };
+    this.submitting = true;
 
-  this.submitting = true;
+    this.service.updateExam(this.examId, payload).subscribe({
+      next: () => {
+        this.examDetailsGroup.markAsPristine();
+        this.submitting = false;
+        stepper.next();
+      },
+      error: () => this.submitting = false
+    });
+  }
 
-  this.service.createExam(payload).subscribe({
-    next: (res) => {
-      this.examId = String(res.id); // IMPORTANT
-      this.isEditMode = true;
-      this.examDetailsGroup.markAsPristine();
-      this.submitting = false;
-      stepper.next();
-    },
-    error: () => this.submitting = false
-  });
-}
+  fetchExamTypes() {
+    this.isLoading = true;
 
-updateExamAndNext(stepper: MatStepper) {
-  const payload = this.examForm.value.examDetails;
+    this.examTypeService.fetchExamTypes()
+      .subscribe({
+        next: (res) => {
+          this.examTypes = res;
+          this.isLoading = false;
+        },
+        error: () => {
+          this.isLoading = false;
+        }
+      });
+  }
 
-  this.submitting = true;
+  fetchSubjects() {
+    this.isLoading = true;
 
-  this.service.updateExam(this.examId, payload).subscribe({
-    next: () => {
-      this.examDetailsGroup.markAsPristine();
-      this.submitting = false;
-      stepper.next();
-    },
-    error: () => this.submitting = false
-  });
-}
+    this.subjectService.getSubjects(true, this.examForm.value.examDetails.examTypeId)
+      .subscribe({
+        next: (res) => {
+          this.subjects = res;
+
+          this.subjectToTopicMapping.clear();
+
+          this.subjects.forEach(subject => {
+            this.subjectToTopicMapping.set(subject.name, subject.topics || []);
+          });
+
+          this.isLoading = false;
+        },
+        error: () => {
+          this.isLoading = false;
+        }
+      });
+  }
 
 
 

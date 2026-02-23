@@ -29,7 +29,7 @@ import { ApiService } from '../../services/api.service';
 })
 export class ExamsListComponent implements OnInit {
 
-  displayedColumns = ['title', 'duration', 'questions', 'status', 'actions'];
+  displayedColumns = ['examType', 'title', 'duration', 'questions', 'status', 'actions'];
   exams: any[] = [];
   loading = true;
 

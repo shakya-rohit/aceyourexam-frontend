@@ -18,6 +18,14 @@
     <mat-card *ngIf="!loading">
       <table mat-table [dataSource]="exams" class="mat-elevation-z1">
 
+        <!-- Exam Type -->
+        <ng-container matColumnDef="examType">
+          <th mat-header-cell *matHeaderCellDef> Exam Type </th>
+          <td mat-cell *matCellDef="let exam">
+            {{ exam.examType }}
+          </td>
+        </ng-container>
+
         <!-- Title -->
         <ng-container matColumnDef="title">
           <th mat-header-cell *matHeaderCellDef> Title </th>

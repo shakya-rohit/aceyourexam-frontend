@@ -3,4 +3,5 @@ export interface Exam {
   title: string;
   description?: string;
   durationMinutes: number;
+  examTypeId: number;
 }

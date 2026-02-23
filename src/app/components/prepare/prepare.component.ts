@@ -79,6 +79,7 @@ topics = [
 
     const request = {
       examType: 'NEET',
+      examTypeId: 1,
       totalQuestions: this.totalQuestions,
       mode: this.mode,
       timeLimitMinutes: this.timeMode === 'TIMED'
