@@ -330,32 +330,40 @@ export class ApiService {
   }
 
   addQuestionsFromQuestionBank(examId: string, payload: any) {
-  return this.http.post(
-    `${this.baseUrl}/exams/${examId}/questions`,
-    payload,
-    { headers: this.getAuthHeaders() }
-  );
-}
+    return this.http.post(
+      `${this.baseUrl}/exams/${examId}/questions`,
+      payload,
+      { headers: this.getAuthHeaders() }
+    );
+  }
 
-removeQuestionFromExam(examId: string, questionId: number) {
-  return this.http.delete(
-    `${this.baseUrl}/exams/${examId}/questions/${questionId}`,
-    { headers: this.getAuthHeaders() }
-  );
-}
+  removeQuestionFromExam(examId: string, questionId: number) {
+    return this.http.delete(
+      `${this.baseUrl}/exams/${examId}/questions/${questionId}`,
+      { headers: this.getAuthHeaders() }
+    );
+  }
 
-replaceQuestionInExam(
-  examId: string,
-  questionId: number,
-  payload: { newQuestionBankId: number }
-) {
-  return this.http.put(
-    `${this.baseUrl}/exams/${examId}/questions/${questionId}/replace`,
-    payload,
-    { headers: this.getAuthHeaders() }
-  );
-}
+  replaceQuestionInExam(
+    examId: string,
+    questionId: number,
+    payload: { newQuestionBankId: number }
+  ) {
+    return this.http.put(
+      `${this.baseUrl}/exams/${examId}/questions/${questionId}/replace`,
+      payload,
+      { headers: this.getAuthHeaders() }
+    );
+  }
+
+  generateAIAnalysis(attemptId: number) {
+    return this.http.post<any>(
+      `${this.baseUrl}/student/attempts/${attemptId}/ai-analysis`,
+      {},
+      { headers: this.getAuthHeaders() }
+    );
+  }
 
 
-  
+
 }

@@ -27,6 +27,9 @@ export class AnalysisComponent implements OnInit {
 
   insights: Insight[] = [];
 
+  aiAnalysis: any = null;
+  aiLoading = false;
+
   constructor(private route: ActivatedRoute, private api: ApiService, private router: Router) { }
 
   ngOnInit(): void {
@@ -44,7 +47,7 @@ export class AnalysisComponent implements OnInit {
           accuracy: res.accuracy || this.calculateAccuracy(res)
         };
         this.prepareCharts(this.attemptData);
-        this.insights=res.insights;
+        this.insights = res.insights;
         // this.generateInsights(this.attemptData);
       },
       error: (err) => console.error('Error loading attempt', err)
@@ -133,6 +136,22 @@ export class AnalysisComponent implements OnInit {
     responsive: true,
     maintainAspectRatio: false,
   };
+
+  generateAIAnalysis() {
+    this.aiLoading = true;
+    this.aiAnalysis = null;
+
+    this.api.generateAIAnalysis(this.attemptId).subscribe({
+      next: (res) => {
+        this.aiAnalysis = res;
+        this.aiLoading = false;
+      },
+      error: (err) => {
+        console.error('AI analysis error', err);
+        this.aiLoading = false;
+      }
+    });
+  }
 
 
 }

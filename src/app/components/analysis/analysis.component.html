@@ -1,17 +1,34 @@
 <div class="analysis-container">
   <div class="analysis-header">
-    <h2>{{ attemptData?.examTitle }}</h2>
-    <p class="meta">
-      📅 {{ attemptData?.submittedAt | date:'medium' }} • 🎯 {{ attemptData?.totalScore }}/720
-    </p>
-  </div>
+    <div class="header-left">
+      <h2>{{ attemptData?.examTitle }}</h2>
+      <p class="meta">
+        📅 {{ attemptData?.submittedAt | date: "medium" }} • 🎯
+        {{ attemptData?.totalScore }}/720
+      </p>
+    </div>
 
+    <div class="header-right">
+      <button
+        mat-stroked-button
+        color="primary"
+        class="ai-btn"
+        (click)="generateAIAnalysis()"
+        [disabled]="aiLoading"
+      >
+        <span *ngIf="!aiLoading">🧠 AI Insights</span>
+        <span *ngIf="aiLoading">Analyzing...</span>
+      </button>
+    </div>
+  </div>
 
   <!-- 📊 Stats Summary Section -->
   <div class="stats-section" *ngIf="attemptData">
     <div class="stat-card">
       <h4>Total Questions</h4>
-      <p>{{ attemptData?.totalQuestions || attemptData?.questions?.length || 0 }}</p>
+      <p>
+        {{ attemptData?.totalQuestions || attemptData?.questions?.length || 0 }}
+      </p>
     </div>
     <div class="stat-card correct">
       <h4>Correct</h4>
@@ -27,7 +44,7 @@
     </div>
     <div class="stat-card">
       <h4>Accuracy</h4>
-      <p>{{ attemptData?.accuracy | number:'1.0-2' }}%</p>
+      <p>{{ attemptData?.accuracy | number: "1.0-2" }}%</p>
     </div>
   </div>
 
@@ -43,7 +60,12 @@
     <div class="chart-card">
       <h3>Subject-wise Performance</h3>
       <div class="bar-wrapper">
-        <canvas baseChart [data]="barChartData" [options]="barChartOptions" [type]="'bar'"></canvas>
+        <canvas
+          baseChart
+          [data]="barChartData"
+          [options]="barChartOptions"
+          [type]="'bar'"
+        ></canvas>
       </div>
       <!-- <p class="chart-hint">Accuracy across subjects</p> -->
     </div>
@@ -58,7 +80,34 @@
     </ul>
   </div>
 
+  <div class="ai-analysis-card" *ngIf="aiAnalysis">
+    <h3>AI Performance Insights 🤖</h3>
 
+    <p class="ai-summary">
+      {{ aiAnalysis.summary }}
+    </p>
+
+    <div *ngIf="aiAnalysis.strengths?.length">
+      <h4>✅ Strengths</h4>
+      <ul>
+        <li *ngFor="let s of aiAnalysis.strengths">{{ s }}</li>
+      </ul>
+    </div>
+
+    <div *ngIf="aiAnalysis.improvements?.length">
+      <h4>⚠ Areas to Improve</h4>
+      <ul>
+        <li *ngFor="let i of aiAnalysis.improvements">{{ i }}</li>
+      </ul>
+    </div>
+
+    <div *ngIf="aiAnalysis.recommendations?.length">
+      <h4>🎯 Recommendations</h4>
+      <ul>
+        <li *ngFor="let r of aiAnalysis.recommendations">{{ r }}</li>
+      </ul>
+    </div>
+  </div>
 
   <div class="questions-section">
     <h3>Question Analysis</h3>
@@ -70,28 +119,50 @@
           <th>Your Answer</th>
           <th>Correct Answer</th>
           <th>Status</th>
-          <th>Time Spent</th> <!-- ⏱️ Added -->
+          <th>Time Spent</th>
+          <!-- ⏱️ Added -->
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let q of attemptData?.questions; index as i">
           <td>{{ i + 1 }}</td>
           <td>{{ q.questionText }}</td>
-          <td>{{ q.selectedOptionIndex !== null && q.selectedOptionIndex !== undefined ? q.selectedOptionIndex : '-' }}
+          <td>
+            {{
+              q.selectedOptionIndex !== null &&
+              q.selectedOptionIndex !== undefined
+                ? q.selectedOptionIndex
+                : "-"
+            }}
           </td>
           <td>{{ q.correctOptionIndex }}</td>
-          <td *ngIf="q.selectedOptionIndex === null || q.selectedOptionIndex === undefined" class="skipped">
+          <td
+            *ngIf="
+              q.selectedOptionIndex === null ||
+              q.selectedOptionIndex === undefined
+            "
+            class="skipped"
+          >
             ⏩ Skipped
           </td>
-          <td *ngIf="q.selectedOptionIndex !== null && q.selectedOptionIndex !== undefined"
-            [class.correct]="q.isCorrect" [class.incorrect]="!q.isCorrect">
-            {{ q.isCorrect ? '✔️' : '❌' }}
+          <td
+            *ngIf="
+              q.selectedOptionIndex !== null &&
+              q.selectedOptionIndex !== undefined
+            "
+            [class.correct]="q.isCorrect"
+            [class.incorrect]="!q.isCorrect"
+          >
+            {{ q.isCorrect ? "✔️" : "❌" }}
           </td>
-          <td>{{ q.timeSpent ? q.timeSpent + 's' : '--' }}</td> <!-- ⏱️ Added fallback -->
+          <td>{{ q.timeSpent ? q.timeSpent + "s" : "--" }}</td>
+          <!-- ⏱️ Added fallback -->
         </tr>
       </tbody>
     </table>
   </div>
 
-  <button mat-raised-button color="primary" (click)="backToResults()">Back to Results</button>
+  <button mat-raised-button color="primary" (click)="backToResults()">
+    Back to Results
+  </button>
 </div>
