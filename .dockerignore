@@ -1,0 +1,31 @@
+# Node modules (very large)
+node_modules
+
+# Angular build output
+dist
+
+# Logs
+npm-debug.log
+yarn-error.log
+
+# Environment files
+.env
+
+# Git
+.git
+.gitignore
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode
+.idea
+
+# Docker files
+Dockerfile
+docker-compose.yml
+
+# Documentation
+README.md
