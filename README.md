@@ -1,274 +1,420 @@
 # 🎯 AceYourExam – Online Examination & Performance Analytics Platform
 
-**AceYourExam** is a full-stack web application designed to simulate **real competitive exam environments** (such as NEET) and help students **practice effectively, analyze performance deeply, and track progress over time**.  
-The platform focuses on **exam realism, accuracy, and detailed analytics**, providing an end-to-end online testing experience.
+**AceYourExam** is a full-stack web platform designed to simulate **real competitive exam environments** (like NEET / JEE) and help students **practice effectively, analyze performance deeply, and track progress over time**.
+
+The platform provides:
+
+- Realistic **exam simulation**
+- **Custom practice tests**
+- **Advanced performance analytics**
+- **Admin exam management tools**
+
+It aims to replicate the **complete lifecycle of online testing platforms** used by modern EdTech systems.
 
 ---
 
-## 🚀 Tech Stack
+# 🚀 Tech Stack
 
-| Frontend | Backend | Database | Authentication |
-|--------|--------|----------|----------------|
-| Angular (Standalone APIs), Angular Material | Spring Boot | PostgreSQL (JPA / Hibernate) | JWT (Role-based) |
-
----
-
-## 🏗️ Application Architecture
-
-🌐 Angular Single Page Application ↓  
-⚙️ Spring Boot REST APIs ↓  
-🗄️ PostgreSQL Database  
-
-- Stateless JWT-based authentication  
-- Role-based authorization (**STUDENT / ADMIN**)  
-- Clean layered architecture (Controller → Service → Repository)  
-- Global exception handling & secure API access  
-- Centralized error handling with consistent API responses  
-- Request tracing using unique Request IDs  
-- AOP-based logging for better observability and debugging
----
-
-## ☁️ Production Deployment (AWS)
-
-AceYourExam is deployed on AWS using a **clean, production-style architecture** with clear separation between frontend, backend, and database.
-
-- **Frontend**
-  - Angular application hosted as a **static website on Amazon S3**
-
-- **Backend**
-  - Spring Boot REST APIs deployed on **AWS EC2**
-  - **Nginx** used as a reverse proxy for API traffic
-
-- **Database**
-  - PostgreSQL hosted on **AWS RDS**
-  - Deployed in a **private subnet**
-  - Database access restricted via Security Groups (EC2 → RDS only)
-
-- **Data Migration**
-  - Local PostgreSQL data migrated to AWS RDS using `pg_dump` / `pg_restore` via EC2
-
-- **Cost Considerations**
-  - Free-tier friendly setup (EC2, RDS, S3)
-  - No load balancers or NAT gateways
+| Frontend                                    | Backend     | Database                     | Authentication     | Infrastructure          |
+| ------------------------------------------- | ----------- | ---------------------------- | ------------------ | ----------------------- |
+| Angular (Standalone APIs), Angular Material | Spring Boot | PostgreSQL (JPA / Hibernate) | JWT + Google OAuth | Docker, Kubernetes, AWS |
 
 ---
 
-## 🔐 Authentication & Security
+# 🏗️ Application Architecture
 
-AceYourExam implements a **production-grade authentication system** with both traditional and modern login flows.
+Angular SPA
+↓
+Spring Boot REST APIs
+↓
+PostgreSQL Database
 
-- 🔑 **Email & Password Authentication**
-  - Secure login and registration
-  - Passwords stored using strong hashing
-  - JWT-based stateless session management
+Key architectural decisions:
 
-- 🟢 **Google OAuth 2.0 Login**
-  - One-click login using Google account
-  - Secure ID token verification on backend
-  - Automatic user provisioning for first-time Google users
-  - Seamless fallback to JWT-based authorization after login
-
-- 🛡️ **Security & Access Control**
-  - JWT token generation and validation
-  - Role-based authorization (**STUDENT / ADMIN**)
-  - Custom authentication filter (`JwtAuthenticationFilter`)
-  - Secure endpoint access via Spring Security
-  - Route protection using Angular guards
+- Stateless **JWT authentication**
+- **Role-based authorization** (STUDENT / ADMIN)
+- Clean layered architecture  
+  `Controller → Service → Repository`
+- Global exception handling
+- Request tracing with **unique Request IDs**
+- **AOP-based logging** for observability
 
 ---
 
-## 📝 Exam Lifecycle (Backend Flow)
+# ☁️ Production Deployment (AWS)
 
-1. **Admin creates Exam & Questions**
-2. **Student starts an exam**
-3. Questions are fetched subject-wise
-4. Student submits answers (auto-saved)
-5. Exam auto-submits on timeout
-6. Evaluation logic calculates score & accuracy
-7. Results and analysis are generated and stored
+AceYourExam is deployed using a **production-style cloud architecture**.
+
+### Frontend
+
+- Angular app hosted on **Amazon S3 (static website)**
+
+### Backend
+
+- Spring Boot APIs deployed on **AWS EC2**
+- **Nginx reverse proxy** for API traffic
+
+### Database
+
+- **PostgreSQL on AWS RDS**
+- Deployed inside **private subnet**
+- Database access restricted using **Security Groups**
+
+### Data Migration
+
+Local PostgreSQL data migrated using:
+pg_dump
+pg_restore
+
+### Cost Optimization
+
+- Free-tier friendly setup
+- No load balancers or NAT gateways
 
 ---
 
-## 📸 UI Screenshots
+# 🐳 Containerization & Kubernetes
 
-### Authentication & Home
+The platform also supports **containerized deployments**.
 
-| Login | Home |
-|------|------|
+### Docker
+
+Both frontend and backend are containerized.
+
+Frontend container:
+
+- Angular static build served using **Nginx**
+
+Backend container:
+
+- Runs **Spring Boot REST APIs**
+
+### Kubernetes
+
+Kubernetes manifests are provided to deploy the system.
+
+Includes:
+
+- Deployment
+- Service
+- Scalable backend pods
+
+Deployment flow:
+Docker Build
+↓
+Kubernetes Deployment
+↓
+Multiple backend pods
+↓
+Service Load Balancing
+
+---
+
+# 🔐 Authentication & Security
+
+AceYourExam implements a **secure authentication system**.
+
+### Email & Password Authentication
+
+- Secure login and registration
+- Password hashing
+- JWT-based stateless authentication
+
+### Google OAuth 2.0 Login
+
+- One-click login using Google
+- Backend ID token verification
+- Automatic account creation for first-time users
+
+### Security Controls
+
+- JWT authentication filter
+- Role-based authorization
+- Angular route guards
+- Secure API endpoints
+
+Supported roles:
+STUDENT
+ADMIN
+
+---
+
+# 👨‍🎓 Student Features
+
+## 🧪 Custom Practice Tests
+
+Students can generate **custom practice exams**.
+
+Options include:
+
+- Random question selection
+- Difficulty-based selection
+- Instant feedback or feedback at end
+- Timed or untimed mode
+- Custom question count
+
+Also supports **Quick Topic Practice** such as:
+
+- Optics
+- Thermodynamics
+- Magnetism
+
+---
+
+## 📝 Real Exam Simulation
+
+Full exam experience including:
+
+- Timed exams
+- Subject navigation (Physics / Chemistry / Biology)
+- Question palette
+- Mark for review
+- Auto-save answers
+- Auto-submit on timeout
+
+Supports large exams such as **180-question NEET simulations**.
+
+---
+
+## 📊 Advanced Performance Analytics
+
+After exam completion the platform provides:
+
+- Overall score and accuracy
+- Subject-wise performance
+- Question-level correctness analysis
+- Time spent per question
+- Attempt history
+
+---
+
+## 📈 Dashboard & Progress Tracking
+
+Dashboard visualizes performance trends across attempts.
+
+Includes:
+
+- Best score
+- Average score
+- Performance trend graph
+- Historical exam attempts
+
+---
+
+## 👤 Profile Management
+
+Students can manage:
+
+- Profile details
+- Avatar
+- Exam statistics
+
+---
+
+# 🛠️ Admin Features
+
+## 📚 Question Bank Management
+
+Admins maintain a centralized **question repository**.
+
+Each question supports:
+
+- Question text
+- Multiple options
+- Correct option index
+- Subject
+- Topic
+- Difficulty level (Easy / Medium / Hard)
+- Marks
+
+Admin capabilities:
+
+- Add questions
+- Edit questions
+- Delete questions
+- Filter by subject
+- Filter by difficulty
+- Search questions
+
+---
+
+## 📝 Multi-Step Exam Creation Workflow
+
+Admins create exams using a **4-step workflow**:
+
+1. Exam Details
+2. Add Questions
+3. Review Configuration
+4. Publish Exam
+
+Admins can configure:
+
+- Exam title
+- Duration
+- Exam type
+- Description
+- Question selection
+
+---
+
+# 📸 UI Screenshots
+
+## Authentication & Home
+
+| Login                           | Home                          |
+| ------------------------------- | ----------------------------- |
 | ![Login](screenshots/login.png) | ![Home](screenshots/home.png) |
 
 ---
 
-### Exam Runner (Real Exam Mode)
+## Prepare Practice Test
 
-| Exam Interface |
-|---------------|
-| ![Exam](screenshots/exam.png) |
+| Practice Test Builder             | Practice Test Runner              |
+| --------------------------------- | --------------------------------- |
+| ![Login](screenshots/prepare.png) | ![Home](screenshots/prepare2.png) |
 
-- NEET-style layout with up to 180 questions  
-- Subject tabs (Physics / Chemistry / Biology)  
-- Mark for Review, Save & Next, Timer  
+Students can configure practice tests with difficulty, timing, and question selection.
 
 ---
 
-### Result Analysis
+## Exam Runner
 
-| Summary & Charts | Question-wise Analysis |
-|-----------------------|------------------|
+| Exam Interface                |
+| ----------------------------- |
+| ![Exam](screenshots/exam.png) |
+
+Realistic exam interface with subject navigation and timer.
+
+---
+
+## Result Analysis
+
+| Summary                                        | Question Analysis                              |
+| ---------------------------------------------- | ---------------------------------------------- |
 | ![Analysis](screenshots/result-analysis-1.png) | ![Analysis](screenshots/result-analysis-2.png) |
 
 ---
 
-### Dashboard & Progress Tracking
+## Dashboard
 
-| Performance Over Time | Past Results |
-|-------------------|----------------------|
+| Performance Tracking                     | Exam History                             |
+| ---------------------------------------- | ---------------------------------------- |
 | ![Dashboard](screenshots/dashboard1.png) | ![Dashboard](screenshots/dashboard2.png) |
 
 ---
 
-### Results History
+## Admin Question Bank
 
-| Past Attempts |
-|--------------|
-| ![Results](screenshots/results.png) |
-
----
-
-### User Profile
-
-| Profile Page |
-|-------------|
-| ![Profile](screenshots/profile.png) |
+| Question Bank                                | Question Bank List                           |
+| -------------------------------------------- | -------------------------------------------- |
+| ![Dashboard](screenshots/question-bank1.png) | ![Dashboard](screenshots/question-bank2.png) |
 
 ---
 
-## ✅ Features
+## Exam Creation
 
-- 🔐 **Secure Authentication**
-  - Email & password login
-  - Google OAuth 2.0 login (One-click sign-in)
-  - JWT-based session handling
-  - Role-based access control
-
-- 📝 **Real Exam Experience**
-  - Timed exams with auto-submit
-  - Subject-wise navigation
-  - Question palette (Attempted / Unattempted / Marked for Review)
-  - Persistent answers during navigation
-
-- 📊 **Advanced Performance Analytics**
-  - Overall accuracy calculation
-  - Subject-wise performance breakdown
-  - Question-level correctness analysis
-  - Time spent per question
-
-- 📈 **Dashboard & Progress Tracking**
-  - Best & average score
-  - Performance trend graph
-  - Attempt history
-
-- 👤 **Profile Management**
-  - User details
-  - Avatar support
-  - Exam statistics
-
-- 🧩 **Scalable Backend**
-  - RESTful APIs
-  - DTO-based responses
-  - Modular security configuration
+| Exam Builder                                 |
+| -------------------------------------------- |
+| ![ExamBuilder](screenshots/exam-builder.png) |
 
 ---
 
-## 🌟 Notable Engineering Highlights
+# 📝 Exam Lifecycle (Backend Flow)
 
-- Implemented **Google OAuth 2.0 login** with backend ID token verification
-- Designed a **stateless authentication flow** combining OAuth + JWT
-- Built with **clean separation of concerns** (Controller → Service → Repository)
-- Handles real-world exam constraints (timeouts, autosave, auto-submit)
-- Scales cleanly for large exams (e.g., 180-question NEET simulations)
+Admin creates exam
+↓
+Student starts exam
+↓
+Questions fetched subject-wise
+↓
+Answers saved during exam
+↓
+Exam auto-submits on timeout
+↓
+Evaluation calculates score
+↓
+Results & analytics generated
 
 ---
 
-## 📦 Project Setup
+# 📦 Project Setup
 
-### 1. Clone Repositories
+## Clone Repositories
 
-```bash
 git clone https://github.com/your-username/aceyourexam-frontend.git
-git clone https://github.com/your-username/aceyourexam-backend.git
-```
 
----
+## git clone https://github.com/your-username/aceyourexam-backend.git
 
-### 2. Run Frontend (Angular)
+## Run Frontend
 
-```bash
 cd aceyourexam-frontend
 npm install
 ng serve
-```
 
-Frontend will be available at  
-👉 `http://localhost:4200`
+Frontend runs at:
+
+http://localhost:4200
 
 ---
 
-### 3. Run Backend (Spring Boot)
+## Run Backend
 
-```bash
-cd ../aceyourexam-backend
+cd aceyourexam-backend
 ./mvnw spring-boot:run
-```
 
-Backend APIs will be available at  
-👉 `http://localhost:8080`
+Backend runs at:
+
+http://localhost:8080
 
 ---
 
-## 📁 Folder Structure (Frontend)
+# 📁 Frontend Structure
 
-```
 aceyourexam-frontend/
-├── src/app/
-│   ├── components/
-│   │   ├── auth/
-│   │   ├── dashboard/
-│   │   ├── exam/
-│   │   ├── analysis/
-│   │   ├── results/
-│   │   └── profile/
-│   ├── services/
-│   ├── guards/
-│   ├── interceptors/
-│   └── app.routes.ts
-├── screenshots/
-└── README.md
-```
+├── src/app
+│ ├── auth
+│ ├── dashboard
+│ ├── exam
+│ ├── analysis
+│ ├── results
+│ ├── prepare
+│ ├── admin
+│ │ ├── question-bank
+│ │ └── exam-builder
+│ ├── services
+│ ├── guards
+│ └── interceptors
 
 ---
 
-## 🌱 Future Enhancements
+# 🌱 Future Enhancements
 
-- Negative marking support
+- Negative marking
 - Section-wise exams
-- Leaderboards & rankings
+- Leaderboards
 - Difficulty-based analytics
-- Mobile-first exam experience
+- Mobile-first exam interface
+- AI-based performance insights
 
 ---
 
-## 👨‍💻 Author
+# 👨‍💻 Author
 
 **Rohit Shakya**  
-📍 Senior Software Engineer  
-📧 rohitshakya930@gmail.com  
-🔗 LinkedIn: https://www.linkedin.com/in/rohitshakya  
-🌐 Portfolio: https://shakya-rohit.github.io  
+Senior Software Engineer
+
+📧 rohitshakya930@gmail.com
+
+🔗 LinkedIn  
+https://www.linkedin.com/in/rohitshakya
+
+🌐 Portfolio  
+https://shakya-rohit.github.io
 
 ---
 
-## ⭐️ Support & Feedback
+# ⭐ Support
 
-If you find this project useful, feel free to ⭐ star it on GitHub.  
-Feedback, suggestions, and contributions are welcome!
+If you find this project useful, please consider **starring the repository** ⭐
+
+Feedback and contributions are welcome.
