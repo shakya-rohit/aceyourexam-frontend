@@ -27,10 +27,10 @@ declare var google: any;
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
-    RouterModule
+    RouterModule,
   ],
   templateUrl: './auth.component.html',
-  styleUrls: ['./auth.component.css']
+  styleUrls: ['./auth.component.css'],
 })
 export class AuthComponent implements OnInit {
   // login form fields
@@ -44,10 +44,8 @@ export class AuthComponent implements OnInit {
 
   constructor(
     private api: ApiService,
-    private router: Router
-  ) { }
-
-
+    private router: Router,
+  ) {}
 
   ngOnInit() {
     google.accounts.id.initialize({
@@ -59,7 +57,7 @@ export class AuthComponent implements OnInit {
             localStorage.setItem('AYE_TOKEN', res.token);
             localStorage.setItem('AYE_USER', JSON.stringify(res));
             this.api.setLoginStatus(true);
-            
+
             if (res.examTypeId === null || res.examTypeId === undefined) {
               this.router.navigate(['/complete-profile']);
               return;
@@ -70,9 +68,9 @@ export class AuthComponent implements OnInit {
           error: (err) => {
             console.error('Login failed', err);
             alert('Invalid credentials. Please try again.');
-          }
+          },
         });
-      }
+      },
     });
 
     // initial render
@@ -97,14 +95,10 @@ export class AuthComponent implements OnInit {
       google.accounts.id.renderButton(btn, {
         theme: 'filled_blue',
         size: 'large',
-        shape: 'rectangle'
+        shape: 'rectangle',
       });
     }, 0);
   }
-
-
-
-
 
   // Normal login using backend email/password
   login() {
@@ -125,7 +119,7 @@ export class AuthComponent implements OnInit {
       error: (err) => {
         console.error('Login failed', err);
         alert('Invalid credentials. Please try again.');
-      }
+      },
     });
   }
 
@@ -135,7 +129,7 @@ export class AuthComponent implements OnInit {
       name: this.regName,
       email: this.regEmail,
       password: this.regPassword,
-      role: 'STUDENT'
+      role: 'STUDENT',
     };
     this.api.register(payload).subscribe({
       next: () => {
@@ -147,8 +141,7 @@ export class AuthComponent implements OnInit {
       error: (err) => {
         console.error('Registration failed', err);
         alert('Registration failed. Try again.');
-      }
+      },
     });
   }
-
 }

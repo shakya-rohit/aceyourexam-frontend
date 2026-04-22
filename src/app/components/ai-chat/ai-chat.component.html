@@ -1,0 +1,25 @@
+<div class="chat-wrapper">
+  <div class="messages" #scrollContainer>
+    <div *ngFor="let msg of messages" [ngClass]="msg.role === 'user' ? 'user-msg' : 'ai-msg'">
+      <div class="bubble" [innerHTML]="formatMessage(msg.text)"></div>
+    </div>
+
+    <div *ngIf="loading" class="ai-msg">
+      <div class="bubble loading-bubble">Thinking...</div>
+    </div>
+  </div>
+
+  <div class="bottom-section">
+    <div class="suggestions">
+      <button *ngFor="let s of suggestions" (click)="sendQuick(s)">
+        {{ s }}
+      </button>
+    </div>
+
+    <div class="input-box">
+      <input [(ngModel)]="userInput" (keyup.enter)="sendMessage()" placeholder="Ask AI Coach..." />
+
+      <button (click)="sendMessage()">➤</button>
+    </div>
+  </div>
+</div>
