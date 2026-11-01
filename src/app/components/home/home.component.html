@@ -1,9 +1,87 @@
-<mat-card>
-  <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" alt="Logo" />
-  <h1>AceYourExam 🎓</h1>
-  <p>
-    Prepare smarter, not harder! Practice live exams, analyze your results, and
-    improve with personalized insights.
-  </p>
-  <button mat-raised-button color="primary" (click)="goToLogin()">Get Started</button>
-</mat-card>
+<main class="home-page">
+  <section class="hero page-width">
+    <div class="hero-copy">
+      <span class="eyebrow"><span class="spark">✦</span> NEET &amp; JEE exam preparation</span>
+      <h1>Prepare with a plan.<br /><em>Improve with every attempt.</em></h1>
+      <p class="hero-description">
+        Practise with realistic exams, understand where you can improve, and turn your results into a focused next step.
+      </p>
+      <div class="hero-actions">
+        <button type="button" class="button primary-button" (click)="goToLogin()">Create your free account <span aria-hidden="true">→</span></button>
+        <a class="button secondary-button" href="#how-it-works">See how it works</a>
+      </div>
+      <p class="cta-note">Start practising in minutes. Keep your progress in one place.</p>
+      <div class="benefit-list" aria-label="AceYourExam features">
+        <span><i aria-hidden="true">✓</i> Timed mock exams</span>
+        <span><i aria-hidden="true">✓</i> Question-by-question review</span>
+        <span><i aria-hidden="true">✓</i> AI study coach</span>
+      </div>
+    </div>
+
+    <div class="preview-wrap" aria-label="Sample dashboard preview">
+      <span class="sample-label">SAMPLE DASHBOARD</span>
+      <section class="preview-card">
+        <header class="preview-header">
+          <span class="preview-brand">AceYourExam <span>/</span> Your progress</span>
+          <span class="preview-avatar" aria-hidden="true">RS</span>
+        </header>
+        <div class="preview-content">
+          <span class="preview-kicker">YOUR STUDY SNAPSHOT</span>
+          <h2>Progress you can act on</h2>
+          <div class="metrics">
+            <div class="metric"><strong>6</strong><span>Exams taken</span></div>
+            <div class="metric"><strong>61</strong><span>Average score</span></div>
+            <div class="metric"><strong>180</strong><span>Best score</span></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Performance over time <span>Sample view</span></div>
+            <div class="sample-chart" aria-hidden="true">
+              <div class="bar-pair"><i style="height:17%"></i><i class="biology" style="height:22%"></i></div>
+              <div class="bar-pair"><i style="height:42%"></i><i class="biology" style="height:51%"></i></div>
+              <div class="bar-pair"><i style="height:27%"></i><i class="biology" style="height:33%"></i></div>
+              <div class="bar-pair"><i style="height:70%"></i><i class="biology" style="height:61%"></i></div>
+              <div class="bar-pair"><i style="height:53%"></i><i class="biology" style="height:79%"></i></div>
+            </div>
+            <div class="chart-labels"><span>Attempt 1</span><span>Attempt 2</span><span>Attempt 3</span><span>Attempt 4</span><span>Latest</span></div>
+          </div>
+          <div class="next-step"><span>Next step</span><strong>Review your focus areas <b aria-hidden="true">→</b></strong></div>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <section class="features-section page-width">
+    <div class="section-heading">
+      <h2>Everything you need to prepare with purpose</h2>
+      <p>Practise, learn from your attempts, and decide what to do next.</p>
+    </div>
+    <div class="feature-grid">
+      <article class="feature-card">
+        <span class="feature-icon" aria-hidden="true">📝</span>
+        <h3>Practice like exam day</h3>
+        <p>Take timed mock exams and focused practice tests built around your preparation goals.</p>
+      </article>
+      <article class="feature-card">
+        <span class="feature-icon" aria-hidden="true">📊</span>
+        <h3>See what your results mean</h3>
+        <p>Review accuracy by subject and revisit the questions you got wrong or skipped.</p>
+      </article>
+      <article class="feature-card">
+        <span class="feature-icon" aria-hidden="true">🧠</span>
+        <h3>Get help with your next step</h3>
+        <p>Ask the AI study coach for explanations, revision ideas, and a plan that fits your schedule.</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="how-it-works" class="steps-section page-width">
+    <div class="step-card"><span>1</span><div><h3>Take a practice test</h3><p>Choose a full exam or practise a topic.</p></div></div>
+    <div class="step-card"><span>2</span><div><h3>Review your performance</h3><p>See what went well and where you lost marks.</p></div></div>
+    <div class="step-card"><span>3</span><div><h3>Plan your next session</h3><p>Use clear insights to focus your revision.</p></div></div>
+  </section>
+
+  <section class="closing-cta page-width">
+    <div><h2>Make your next study session count.</h2><p>Create an account to start practising and keep your progress together.</p></div>
+    <button type="button" class="button" (click)="goToLogin()">Get started for free <span aria-hidden="true">→</span></button>
+  </section>
+</main>

@@ -14,9 +14,43 @@
       <mat-spinner diameter="40"></mat-spinner>
     </div>
 
+    <p class="error-message" role="alert" *ngIf="errorMessage">{{ errorMessage }}</p>
+
     <!-- Exams Table -->
-    <mat-card *ngIf="!loading">
-      <table mat-table [dataSource]="exams" class="mat-elevation-z1">
+    <mat-card *ngIf="!loading && !errorMessage">
+      <div class="filter-bar">
+        <mat-form-field appearance="outline">
+          <mat-label>Search title</mat-label>
+          <input matInput [(ngModel)]="searchText" (ngModelChange)="onFilterChange()" placeholder="Search exams">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Exam type</mat-label>
+          <mat-select [(ngModel)]="selectedExamType" (selectionChange)="onFilterChange()">
+            <mat-option value="">All types</mat-option>
+            <mat-option *ngFor="let type of examTypes" [value]="type">{{ type }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Status</mat-label>
+          <mat-select [(ngModel)]="selectedStatus" (selectionChange)="onFilterChange()">
+            <mat-option value="">All statuses</mat-option>
+            <mat-option *ngFor="let status of statuses" [value]="status">{{ status }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="results-summary" aria-live="polite">
+        Showing {{ pagedExams.length }} of {{ filteredExams.length }} matching exams ({{ exams.length }} total)
+      </div>
+
+      <div class="empty-state" *ngIf="filteredExams.length === 0">
+        No exams match these filters. Try changing your search or filters.
+      </div>
+
+      <div class="table-scroll" *ngIf="filteredExams.length > 0">
+      <table mat-table [dataSource]="pagedExams" class="mat-elevation-z1">
 
         <!-- Exam Type -->
         <ng-container matColumnDef="examType">
@@ -46,7 +80,7 @@
         <ng-container matColumnDef="questions">
           <th mat-header-cell *matHeaderCellDef> Questions </th>
           <td mat-cell *matCellDef="let exam">
-            {{ exam.questions?.length || 0 }}
+            {{ exam.questionCount ?? '—' }}
           </td>
         </ng-container>
 
@@ -86,6 +120,15 @@
         <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
 
       </table>
+      </div>
+
+      <mat-paginator *ngIf="filteredExams.length > 0"
+        [length]="filteredExams.length"
+        [pageIndex]="pageIndex"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="[10, 25, 50]"
+        (page)="onPageChange($event)">
+      </mat-paginator>
     </mat-card>
 
   </div>

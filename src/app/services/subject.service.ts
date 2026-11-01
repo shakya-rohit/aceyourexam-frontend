@@ -22,7 +22,7 @@ export class SubjectService {
   private baseUrl = environment.apiBaseUrl;
 
   // cache
-  private subjectsCache: Subject[] | null = null;
+  private subjectsCache = new Map<string, Subject[]>();
 
   constructor(private http: HttpClient) {}
 
@@ -35,8 +35,10 @@ export class SubjectService {
 
   getSubjects(includeTopics: boolean, examTypeId?: number): Observable<Subject[]> {
     // cache only when topics are included (most useful case)
-    if (includeTopics && this.subjectsCache) {
-      return of(this.subjectsCache);
+    const cacheKey = `${includeTopics}:${examTypeId ?? 'all'}`;
+    const cached = this.subjectsCache.get(cacheKey);
+    if (includeTopics && cached) {
+      return of(cached);
     }
 
     let params = new HttpParams().set('includeTopics', includeTopics);
@@ -52,13 +54,13 @@ export class SubjectService {
       .pipe(
         tap(res => {
           if (includeTopics) {
-            this.subjectsCache = res;
+            this.subjectsCache.set(cacheKey, res);
           }
         })
       );
   }
 
   clearCache() {
-    this.subjectsCache = null;
+    this.subjectsCache.clear();
   }
 }

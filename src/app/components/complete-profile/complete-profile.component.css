@@ -1,44 +1,211 @@
+:host {
+  display: block;
+  min-height: 100%;
+}
+
 .complete-page {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background: #f4f6f8;
-  padding: 1rem;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  min-height: calc(100vh - 80px);
+  padding: 40px 20px;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(65, 83, 190, 0.08), transparent 58%),
+    #f5f7fc;
 }
 
 .complete-card {
-  width: 100%;
-  max-width: 500px;
-  padding: 2rem;
-  border-radius: 8px;
+  box-sizing: border-box;
+  width: min(100%, 620px);
+  padding: 36px 40px 34px;
+  border: 1px solid #e8ebf3;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 18px 48px rgba(27, 39, 94, 0.09);
+}
+
+.step-label {
+  margin-bottom: 10px;
+  color: #5262bd;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-align: center;
 }
 
 .title {
+  margin: 0;
+  color: #17224a;
+  font-size: clamp(24px, 4vw, 30px);
+  font-weight: 700;
+  line-height: 1.2;
   text-align: center;
-  margin-bottom: 0.5rem;
 }
 
 .subtitle {
+  max-width: 430px;
+  margin: 12px auto 26px;
+  color: #667085;
+  font-size: 15px;
+  line-height: 1.55;
   text-align: center;
-  font-size: 0.9rem;
-  color: #666;
-  margin-bottom: 1.5rem;
 }
 
 .exam-options {
+  display: grid;
+  gap: 12px;
+}
+
+.exam-option {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 16px 18px;
+  overflow: hidden;
+  border: 1px solid #e1e5ef;
+  border-radius: 14px;
+  background: #fff;
+  transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+}
+
+.exam-option:hover {
+  border-color: #aab4e8;
+  background: #fafbff;
+}
+
+.exam-option.selected {
+  border-color: #4658bd;
+  background: #f5f6ff;
+  box-shadow: 0 0 0 2px rgba(70, 88, 189, 0.1);
+}
+
+/* The radio control remains visible while the full row acts as its label. */
+:host ::ng-deep .exam-option .mdc-form-field {
+  width: 100%;
+  align-items: center;
+}
+
+:host ::ng-deep .exam-option .mdc-form-field > label {
+  width: 100%;
+  padding-left: 4px;
+  white-space: normal;
+}
+
+:host ::ng-deep .exam-option .mdc-radio {
+  flex: 0 0 auto;
+}
+
+.option-content {
   display: flex;
+  align-items: center;
+  gap: 15px;
+  min-width: 0;
+}
+
+.option-icon {
+  display: grid;
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border-radius: 13px;
+  background: #eef1ff;
+  font-size: 23px;
+}
+
+.option-copy {
+  display: flex;
+  min-width: 0;
   flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: 4px;
+}
+
+.option-name {
+  color: #202b52;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.option-description {
+  color: #667085;
+  font-size: 13px;
+}
+
+.option-subjects {
+  color: #4e5eb6;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.change-note {
+  margin: 14px 0 20px;
+  color: #667085;
+  font-size: 12px;
+  text-align: center;
 }
 
 .save-btn {
+  display: flex;
   width: 100%;
-  height: 44px;
+  min-height: 50px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 10px;
+  font-weight: 700;
 }
 
-.center {
+.button-spinner {
+  display: inline-block;
+}
+
+.loading-state {
   display: flex;
+  min-height: 180px;
+  align-items: center;
   justify-content: center;
+  gap: 14px;
+  color: #667085;
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 18px 0;
+  padding: 12px 14px;
+  border: 1px solid #f2c5c5;
+  border-radius: 10px;
+  background: #fff7f7;
+  color: #a52a2a;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.save-error {
+  margin-top: 16px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 600px) {
+  .complete-page {
+    min-height: calc(100vh - 64px);
+    padding: 24px 14px;
+  }
+
+  .complete-card {
+    padding: 28px 20px 24px;
+    border-radius: 16px;
+  }
+
+  .exam-option {
+    padding: 14px 10px;
+  }
+
+  .option-icon {
+    flex-basis: 40px;
+    width: 40px;
+    height: 40px;
+  }
 }

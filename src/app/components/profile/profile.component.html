@@ -18,31 +18,20 @@
         </div>
       </div>
 
-      <mat-nav-list>
-        <mat-list-item (click)="select('profile')" [class.active]="active==='profile'">
-          <mat-icon matListIcon>person</mat-icon>
-          <h4 matLine>Profile</h4>
-          <p matLine class="muted">Overview & avatar</p>
-        </mat-list-item>
-
-        <mat-list-item (click)="select('account')" [class.active]="active==='account'">
-          <mat-icon matListIcon>settings</mat-icon>
-          <h4 matLine>Account</h4>
-          <p matLine class="muted">Name & email</p>
-        </mat-list-item>
-
-        <mat-list-item (click)="select('security')" [class.active]="active==='security'">
-          <mat-icon matListIcon>lock</mat-icon>
-          <h4 matLine>Security</h4>
-          <p matLine class="muted">Change password</p>
-        </mat-list-item>
-
-        <mat-list-item (click)="select('danger')" [class.active]="active==='danger'">
-          <mat-icon matListIcon color="warn">dangerous</mat-icon>
-          <h4 matLine>Danger Zone</h4>
-          <p matLine class="muted">Delete account</p>
-        </mat-list-item>
-      </mat-nav-list>
+      <nav class="settings-nav" aria-label="Profile settings">
+        <button type="button" class="settings-nav-item" (click)="select('profile')" [class.active]="active==='profile'" [attr.aria-pressed]="active==='profile'">
+          <mat-icon>person</mat-icon><span><strong>Profile</strong><small>Overview & avatar</small></span>
+        </button>
+        <button type="button" class="settings-nav-item" (click)="select('account')" [class.active]="active==='account'" [attr.aria-pressed]="active==='account'">
+          <mat-icon>settings</mat-icon><span><strong>Account</strong><small>Name & email</small></span>
+        </button>
+        <button type="button" class="settings-nav-item" (click)="select('security')" [class.active]="active==='security'" [attr.aria-pressed]="active==='security'">
+          <mat-icon>lock</mat-icon><span><strong>Security</strong><small>Password & sign-in</small></span>
+        </button>
+        <button type="button" class="settings-nav-item danger-nav" (click)="select('danger')" [class.active]="active==='danger'" [attr.aria-pressed]="active==='danger'">
+          <mat-icon>warning</mat-icon><span><strong>Danger Zone</strong><small>Delete account</small></span>
+        </button>
+      </nav>
     </mat-card>
 
     <!-- RIGHT PANEL -->
@@ -74,10 +63,12 @@
   </div>
 
   <!-- single-line actions (stacked) -->
-  <input #fileInputProfile style="display:none" type="file" accept="image/*" (change)="onAvatarChange($event)" />
-  <button mat-stroked-button class="change-photo-btn" (click)="fileInputProfile.click()">Change photo</button>
-  <button mat-button *ngIf="avatarPreview" (click)="removeAvatar()">Remove</button>
-  <div class="avatar-help">Recommended: 256×256, PNG/JPG</div>
+  <input #fileInputProfile style="display:none" type="file" accept="image/png,image/jpeg,image/webp" (change)="onAvatarChange($event)" />
+  <button mat-stroked-button class="change-photo-btn" type="button" [disabled]="avatarUploading" (click)="fileInputProfile.click()">
+    {{ avatarUploading ? 'Uploading…' : 'Change photo' }}
+  </button>
+  <button mat-button type="button" *ngIf="avatarPreview" [disabled]="avatarUploading" (click)="removeAvatar()">Remove</button>
+  <div class="avatar-help">PNG, JPG or WebP · Up to 5 MB</div>
 </div>
 
           </div>
@@ -107,17 +98,21 @@
             <mat-form-field appearance="fill" class="full">
               <mat-label>Name</mat-label>
               <input matInput formControlName="name" />
-              <mat-error *ngIf="editForm.controls['name'].invalid">Name is required</mat-error>
+              <mat-error *ngIf="editForm.controls['name'].hasError('required')">Name is required</mat-error>
+              <mat-error *ngIf="editForm.controls['name'].hasError('minlength')">Enter at least 2 characters</mat-error>
             </mat-form-field>
 
             <mat-form-field appearance="fill" class="full">
               <mat-label>Email</mat-label>
               <input matInput formControlName="email" />
+              <mat-hint>Email is used to sign in and can’t be changed here.</mat-hint>
             </mat-form-field>
 
             <div class="action-buttons">
-              <button mat-raised-button color="primary" type="submit" [disabled]="editForm.invalid">Save changes</button>
-              <button mat-button type="button" (click)="loadProfile()">Cancel</button>
+            <button mat-raised-button color="primary" type="submit" [disabled]="editForm.invalid || editForm.pristine || isSavingProfile">
+              {{ isSavingProfile ? 'Saving…' : 'Save changes' }}
+            </button>
+            <button mat-button type="button" (click)="cancelProfileEdit()" [disabled]="isSavingProfile">Cancel</button>
             </div>
           </form>
         </div>
@@ -126,7 +121,11 @@
         <div *ngSwitchCase="'security'">
           <h2>Security</h2>
           <p class="subtitle">Password and authentication</p>
-          <button mat-raised-button color="accent" (click)="openChangePassword()">Change password</button>
+          <mat-card class="security-card">
+            <div class="security-icon"><mat-icon>lock</mat-icon></div>
+            <div class="security-copy"><h3>Password</h3><p class="muted">Update your password to keep your account secure.</p></div>
+            <button mat-raised-button color="accent" (click)="openChangePassword()">Change password</button>
+          </mat-card>
         </div>
 
         <!-- DANGER -->
@@ -148,7 +147,7 @@
 </ng-container>
 
 <ng-template #loadingTpl>
-  <div class="loading">
+  <div class="loading" role="status" aria-live="polite">
     <mat-progress-spinner diameter="48" mode="indeterminate"></mat-progress-spinner>
   </div>
 </ng-template>

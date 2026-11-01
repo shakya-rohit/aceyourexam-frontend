@@ -16,11 +16,7 @@ import { ApiService } from '../../services/api.service';
 })
 export class ExamRunnerComponent implements OnInit, OnDestroy {
 
-  sections = [
-    { name: 'Physics', questionIndexes: [] as number[] },
-    { name: 'Chemistry', questionIndexes: [] as number[] },
-    { name: 'Biology', questionIndexes: [] as number[] }
-  ];
+  sections: { name: string; questionIndexes: number[] }[] = [];
 
   activeSectionIndex = 0;
 
@@ -42,6 +38,8 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
   timerSub?: Subscription;
 
   questionStartTime = 0;
+  isSubmitting = false;
+  hasSubmitted = false;
 
   constructor(
     private api: ApiService,
@@ -56,9 +54,6 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
     }
 
     this.exam = JSON.parse(examData);
-    this.timeLeft = (this.exam.durationMinutes || 1) * 60;
-
-    this.startTimer();
     this.loadQuestions();
   }
 
@@ -66,11 +61,13 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
 
   startTimer() {
     this.timerSub = interval(1000).subscribe(() => {
-      this.timeLeft--;
+      if (this.hasSubmitted || this.isSubmitting) return;
+      this.timeLeft = Math.max(0, this.timeLeft - 1);
       this.formattedTime = this.formatTime(this.timeLeft);
 
       if (this.timeLeft <= 0) {
-        this.submitExam();
+        this.timerSub?.unsubscribe();
+        this.submitExam(true);
       }
     });
   }
@@ -84,41 +81,47 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
   /* ---------------- QUESTIONS ---------------- */
 
   loadQuestions() {
-    this.api.getQuestionsByExam(this.exam.id).subscribe({
+    this.api.getQuestionsForAttempt(this.exam.id).subscribe({
       next: res => {
         // Reset data (important if component reloads)
         this.questions = [];
-        this.sections.forEach(sec => sec.questionIndexes = []);
+        this.sections = [];
 
-        this.questions = res.map((q: any) => ({
+        this.questions = (res || []).map((q: any) => ({
           ...q,
           options: q.optionList,
           type: 'SINGLE_CORRECT'
         }));
 
-        // ✅ Assign questions to sections AFTER data arrives
+        // Build sections from the subjects actually present in this exam.
+        const sectionsBySubject = new Map<string, { name: string; questionIndexes: number[] }>();
         this.questions.forEach((q, index) => {
-          if (q.subject === 'Physics') {
-            this.sections[0].questionIndexes.push(index);
-          } else if (q.subject === 'Chemistry') {
-            this.sections[1].questionIndexes.push(index);
-          } else if (q.subject === 'Biology') {
-            this.sections[2].questionIndexes.push(index);
+          const subject = String(q.subject || 'Other').trim() || 'Other';
+          let section = sectionsBySubject.get(subject);
+          if (!section) {
+            section = { name: subject, questionIndexes: [] };
+            sectionsBySubject.set(subject, section);
           }
-          else {
-            console.warn('Unknown subject:', q.subject);
-          }
-
+          section.questionIndexes.push(index);
         });
+        this.sections = Array.from(sectionsBySubject.values());
 
-        // Default to first section’s first question
+        // Default to the first available subject section.
         this.activeSectionIndex = 0;
-        if (this.sections[0].questionIndexes.length > 0) {
-          this.currentIndex = this.sections[0].questionIndexes[0];
+        const firstQuestionIndex = this.sections[0]?.questionIndexes[0];
+        if (firstQuestionIndex !== undefined) {
+          this.currentIndex = firstQuestionIndex;
           this.visited[this.questions[this.currentIndex].id] = true;
         }
 
         this.questionStartTime = Date.now();
+        if (!this.questions.length) {
+          alert('This exam does not have any questions yet.');
+          return;
+        }
+        this.timeLeft = Math.max(1, Number(this.exam.durationMinutes) || 1) * 60;
+        this.formattedTime = this.formatTime(this.timeLeft);
+        this.startTimer();
       },
       error: () => alert('Failed to load questions')
     });
@@ -126,8 +129,13 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
 
 
   goTo(index: number) {
+    if (index < 0 || index >= this.questions.length || index === this.currentIndex) return;
     this.recordTime();
     this.currentIndex = index;
+    const sectionIndex = this.sections.findIndex(section => section.questionIndexes.includes(index));
+    if (sectionIndex >= 0) {
+      this.activeSectionIndex = sectionIndex;
+    }
     this.visited[this.questions[index].id] = true;
     this.questionStartTime = Date.now();
   }
@@ -152,6 +160,7 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
   }
 
   recordTime() {
+    if (this.hasSubmitted) return;
     const q = this.questions[this.currentIndex];
     if (!q) return;
 
@@ -161,19 +170,21 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
 
   /* ---------------- SUBMIT ---------------- */
 
-  submitExam() {
+  submitExam(autoSubmitted = false) {
+    if (this.isSubmitting || this.hasSubmitted || !this.questions.length) return;
     const reviewCount = Object.values(this.markedForReview).filter(v => v).length;
 
-    if (reviewCount > 0) {
+    if (!autoSubmitted && reviewCount > 0) {
       const proceed = confirm(
         `You have ${reviewCount} questions marked for review. Submit anyway?`
       );
       if (!proceed) return;
-    } else {
+    } else if (!autoSubmitted) {
       if (!confirm('Submit exam?')) return;
     }
 
     this.recordTime();
+    this.isSubmitting = true;
     this.timerSub?.unsubscribe();
 
     const payload = {
@@ -187,10 +198,14 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
 
     this.api.submitExam(this.exam.id, payload).subscribe({
       next: res => {
+        this.hasSubmitted = true;
         localStorage.setItem('LAST_RESULT', JSON.stringify(res));
         this.router.navigate(['/results']);
       },
-      error: () => alert('Submit failed')
+      error: () => {
+        this.isSubmitting = false;
+        alert('Submit failed. Please try again.');
+      }
     });
   }
 
@@ -204,6 +219,7 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
   }
 
   toggleReview() {
+    if (!this.currentQuestion) return;
     const qId = this.currentQuestion.id;
     this.markedForReview[qId] = !this.markedForReview[qId];
   }
@@ -213,13 +229,9 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
   }
 
   switchSection(index: number) {
-    this.recordTime();
-    this.activeSectionIndex = index;
-
-    const firstQuestionIndex = this.sections[index].questionIndexes[0];
+    const firstQuestionIndex = this.sections[index]?.questionIndexes[0];
     if (firstQuestionIndex !== undefined) {
-      this.currentIndex = firstQuestionIndex;
-      this.questionStartTime = Date.now();
+      this.goTo(firstQuestionIndex);
     }
   }
 

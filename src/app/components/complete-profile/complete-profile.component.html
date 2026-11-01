@@ -1,40 +1,59 @@
-<div class="complete-page">
+<main class="complete-page">
   <mat-card class="complete-card">
-
-    <h2 class="title">Complete Your Profile</h2>
+    <div class="step-label">PERSONALIZE YOUR EXPERIENCE</div>
+    <h1 class="title">What are you preparing for?</h1>
     <p class="subtitle">
-      Select the exam you are preparing for to personalize your experience.
+      Choose your target exam so we can show you relevant subjects, practice, and progress.
     </p>
 
-    <!-- Loading -->
-    <div *ngIf="isLoading" class="center">
-      <mat-spinner diameter="40"></mat-spinner>
+    <div *ngIf="isLoading" class="loading-state" role="status" aria-live="polite">
+      <mat-spinner diameter="36"></mat-spinner>
+      <span>Loading exam options…</span>
     </div>
 
-    <!-- Exam Selection -->
-    <div *ngIf="!isLoading">
+    <ng-container *ngIf="!isLoading">
+      <div *ngIf="loadError" class="error-message" role="alert">
+        <span>{{ loadError }}</span>
+        <button mat-button type="button" (click)="fetchExamTypes()">Try again</button>
+      </div>
 
-      <mat-radio-group [(ngModel)]="selectedExamTypeId" class="exam-options">
+      <mat-radio-group
+        *ngIf="!loadError && examTypes.length"
+        [(ngModel)]="selectedExamTypeId"
+        class="exam-options"
+        aria-label="Choose your target exam">
         <mat-radio-button
           *ngFor="let exam of examTypes"
+          class="exam-option"
+          [class.selected]="selectedExamTypeId === exam.id"
           [value]="exam.id">
-          {{ exam.name }}
+          <span class="option-content">
+            <span class="option-icon" aria-hidden="true">{{ examIcon(exam) }}</span>
+            <span class="option-copy">
+              <span class="option-name">{{ exam.name }}</span>
+              <span class="option-description">{{ exam.description }}</span>
+              <span class="option-subjects">{{ examSubjects(exam) }}</span>
+            </span>
+          </span>
         </mat-radio-button>
       </mat-radio-group>
 
+      <p *ngIf="!loadError && examTypes.length" class="change-note">
+        You can change your target exam later in your profile.
+      </p>
+
+      <p *ngIf="saveError" class="error-message save-error" role="alert">{{ saveError }}</p>
+
       <button
+        *ngIf="!loadError && examTypes.length"
         mat-raised-button
         color="primary"
         class="save-btn"
         [disabled]="!selectedExamTypeId || isSaving"
         (click)="saveProfile()">
-
-        <span *ngIf="!isSaving">Continue</span>
-        <span *ngIf="isSaving">Saving...</span>
-
+        <mat-spinner *ngIf="isSaving" diameter="18" class="button-spinner"></mat-spinner>
+        <span>{{ isSaving ? 'Saving your choice…' : 'Continue' }}</span>
       </button>
-
-    </div>
-
+    </ng-container>
   </mat-card>
-</div>
+</main>

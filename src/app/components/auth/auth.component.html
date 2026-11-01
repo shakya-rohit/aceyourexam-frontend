@@ -1,75 +1,104 @@
-<div class="auth-container">
-  <mat-card class="auth-card">
-    <mat-tab-group (selectedTabChange)="onTabChange($event)" [preserveContent]="true">
+<main class="auth-container">
+  <div class="auth-layout">
+    <section class="auth-intro">
+      <span class="intro-eyebrow">🎓 Your exam prep, all in one place</span>
+      <h1 *ngIf="selectedTab === 0">Welcome back.<br /><em>Let’s keep moving forward.</em></h1>
+      <h1 *ngIf="selectedTab === 1">Start with a plan.<br /><em>Build confidence as you go.</em></h1>
+      <p *ngIf="selectedTab === 0">Sign in to continue your practice, review your latest results, and pick up where your preparation left off.</p>
+      <p *ngIf="selectedTab === 1">Create an account to practise, understand your performance, and keep your preparation moving in the right direction.</p>
 
-      <!-- Login Tab -->
-      <mat-tab label="Login">
-        <ng-template matTabContent>
-          <form (ngSubmit)="login()" style="margin-top: 1rem;">
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Email</mat-label>
-              <input matInput type="email" [(ngModel)]="loginEmail" name="loginEmail" required />
-            </mat-form-field>
+      <div class="auth-benefits" *ngIf="selectedTab === 0">
+        <div><span>⏱️</span><strong>Timed mock exams</strong></div>
+        <div><span>📊</span><strong>Clear performance insights</strong></div>
+        <div><span>🧠</span><strong>Personalized study coach</strong></div>
+      </div>
+      <div class="auth-benefits" *ngIf="selectedTab === 1">
+        <div><span>📝</span><strong>Practice full exams or topics</strong></div>
+        <div><span>📈</span><strong>Track subject performance</strong></div>
+        <div><span>✨</span><strong>Plan what to do next</strong></div>
+      </div>
 
-            <mat-form-field appearance="outline" class="full-width password-field">
-              <mat-label>Password</mat-label>
-              <input matInput type="password" [(ngModel)]="loginPassword" name="loginPassword" required />
-            </mat-form-field>
+      <div class="intro-note">
+        <strong>{{ selectedTab === 0 ? 'Your progress stays together.' : 'Ready when you are.' }}</strong>
+        {{ selectedTab === 0 ? 'Review your attempts and see what to practise next.' : 'After creating an account, choose your exam preparation path.' }}
+      </div>
+    </section>
 
-            <!-- Forgot Password Link -->
-            <div class="forgot-password">
-              <a
-                mat-button
-                type="button"
-                color="primary"
-                routerLink="/forgot-password"
-                class="forgot-link">
-                Forgot password?
-              </a>
+    <mat-card class="auth-card">
+      <mat-tab-group class="auth-tabs" [selectedIndex]="selectedTab" (selectedTabChange)="onTabChange($event)" [preserveContent]="true">
+        <mat-tab label="Login">
+          <ng-template matTabContent>
+            <div class="form-heading">
+              <h2>Sign in to AceYourExam</h2>
+              <p>Continue preparing for your next exam.</p>
             </div>
-            
-            <button mat-raised-button color="primary" class="full-width" type="submit">
-              Login
+            <form (ngSubmit)="login()" #loginForm="ngForm">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Email address</mat-label>
+                <input matInput type="email" autocomplete="email" [(ngModel)]="loginEmail" name="loginEmail" required />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="full-width password-field">
+                <mat-label>Password</mat-label>
+                <input matInput [type]="showLoginPassword ? 'text' : 'password'" autocomplete="current-password" [(ngModel)]="loginPassword" name="loginPassword" required />
+                <button mat-icon-button matSuffix type="button" (click)="showLoginPassword = !showLoginPassword" [attr.aria-label]="showLoginPassword ? 'Hide password' : 'Show password'">
+                  <mat-icon>{{ showLoginPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+                </button>
+              </mat-form-field>
+
+              <div class="forgot-password"><a routerLink="/forgot-password">Forgot password?</a></div>
+
+              <div class="feedback error-feedback" *ngIf="loginError" role="alert">{{ loginError }}</div>
+              <div class="feedback success-feedback" *ngIf="loginSuccess" role="status">{{ loginSuccess }}</div>
+
+              <button mat-raised-button color="primary" class="submit-button full-width" type="submit" [disabled]="loginLoading || loginForm.invalid">
+                {{ loginLoading ? 'Signing in…' : 'Sign in' }}
+              </button>
+            </form>
+
+            <div class="divider"><span>OR</span></div>
+            <div class="google-btn-wrapper full-width"><div id="googleBtn" class="google-btn"></div></div>
+            <p class="auth-footnote">Sign in to access your saved exam history and study insights.</p>
+          </ng-template>
+        </mat-tab>
+
+        <mat-tab label="Register">
+          <div class="form-heading">
+            <h2>Create your account</h2>
+            <p>A few details to get your preparation started.</p>
+          </div>
+          <form (ngSubmit)="register()" #registerForm="ngForm">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Full name</mat-label>
+              <input matInput autocomplete="name" [(ngModel)]="regName" name="regName" required minlength="2" />
+              <mat-error>Please enter your name.</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Email address</mat-label>
+              <input matInput type="email" autocomplete="email" [(ngModel)]="regEmail" name="regEmail" required />
+              <mat-error>Enter a valid email address.</mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Create a password</mat-label>
+              <input matInput [type]="showRegisterPassword ? 'text' : 'password'" autocomplete="new-password" [(ngModel)]="regPassword" name="regPassword" required minlength="6" />
+              <button mat-icon-button matSuffix type="button" (click)="showRegisterPassword = !showRegisterPassword" [attr.aria-label]="showRegisterPassword ? 'Hide password' : 'Show password'">
+                <mat-icon>{{ showRegisterPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+              <mat-hint>Use at least 6 characters.</mat-hint>
+              <mat-error>Password must be at least 6 characters.</mat-error>
+            </mat-form-field>
+
+            <div class="feedback error-feedback" *ngIf="registerError" role="alert">{{ registerError }}</div>
+            <button mat-raised-button color="accent" class="submit-button register-button full-width" type="submit" [disabled]="registerLoading || registerForm.invalid">
+              {{ registerLoading ? 'Creating account…' : 'Create account' }}
             </button>
           </form>
-
-          <!-- OR divider -->
-          <div class="divider">
-            <span>OR</span>
-          </div>
-
-          <!-- Google login -->
-          <div class="google-btn-wrapper full-width">
-            <div id="googleBtn" class="google-btn"></div>
-          </div>
-
-        </ng-template>
-      </mat-tab>
-
-
-      <!-- Register Tab -->
-      <mat-tab label="Register">
-        <form (ngSubmit)="register()" style="margin-top: 1rem;">
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Full Name</mat-label>
-            <input matInput [(ngModel)]="regName" name="regName" required />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Email</mat-label>
-            <input matInput type="email" [(ngModel)]="regEmail" name="regEmail" required />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Password</mat-label>
-            <input matInput type="password" [(ngModel)]="regPassword" name="regPassword" required />
-          </mat-form-field>
-
-          <button mat-raised-button color="accent" class="full-width" type="submit">
-            Register
-          </button>
-        </form>
-      </mat-tab>
-    </mat-tab-group>
-  </mat-card>
-</div>
+          <div class="register-note"><strong>What happens next?</strong> Choose your exam type so your practice experience can be tailored to you.</div>
+          <p class="auth-footnote">Already have an account? <button type="button" class="text-action" (click)="selectedTab = 0">Sign in</button></p>
+        </mat-tab>
+      </mat-tab-group>
+    </mat-card>
+  </div>
+</main>

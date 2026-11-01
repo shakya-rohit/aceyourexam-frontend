@@ -45,12 +45,14 @@ export class QuestionBankService {
         topic?: string;
         difficulty?: string[];
         q?: string;
+        examTypeId?: number | null;
     }) {
         let params: any = {};
 
         if (filters.subject) params.subject = filters.subject;
         if (filters.topic) params.topic = filters.topic;
         if (filters.q) params.q = filters.q;
+        if (filters.examTypeId) params.examTypeId = filters.examTypeId;
 
         if (filters.difficulty && filters.difficulty.length > 0) {
             params.difficulty = filters.difficulty.join(',');
@@ -77,7 +79,19 @@ export class QuestionBankService {
     }
 
     getPracticeQuestions(requestBody: any) {
-        return this.http.post<any[]>(`${this.baseUrl}/prepare/fetch-questions`, requestBody, {
+        return this.http.post<{ sessionId: string; questions: any[] }>(`${this.baseUrl}/prepare/fetch-questions`, requestBody, {
+            headers: this.getAuthHeaders()
+        });
+    }
+
+    submitPracticeAnswer(requestBody: { sessionId: string; questionId: number; selectedOptionIndex: number }) {
+        return this.http.post<{ questionId: number; correctOptionIndex: number; isCorrect: boolean }>(
+            `${this.baseUrl}/prepare/answer`, requestBody, { headers: this.getAuthHeaders() }
+        );
+    }
+
+    submitPracticeTest(requestBody: { sessionId: string; answers: Array<{ questionId: number; selectedAnswer: string | null }> }) {
+        return this.http.post<any>(`${this.baseUrl}/prepare/submit`, requestBody, {
             headers: this.getAuthHeaders()
         });
     }

@@ -15,16 +15,36 @@
           <mat-form-field appearance="outline" class="full-width">
             <textarea matInput rows="3" placeholder="Enter question text" formControlName="text">
             </textarea>
+            <mat-error *ngIf="questionForm.controls['text'].hasError('required')">Question text is required.</mat-error>
           </mat-form-field>
         </div>
 
         <!-- Options -->
         <div class="form-section">
           <h4>Options</h4>
-          <mat-form-field appearance="outline" class="full-width">
-            <input matInput placeholder="Option A || Option B || Option C || Option D" formControlName="options">
-            <mat-hint>Use <b>||</b> to separate options</mat-hint>
-          </mat-form-field>
+          <div class="options-grid">
+            <mat-form-field appearance="outline">
+              <mat-label>Option A</mat-label>
+              <input matInput formControlName="optionA">
+              <mat-error *ngIf="questionForm.controls['optionA'].hasError('required')">Option A is required.</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Option B</mat-label>
+              <input matInput formControlName="optionB">
+              <mat-error *ngIf="questionForm.controls['optionB'].hasError('required')">Option B is required.</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Option C (optional)</mat-label>
+              <input matInput formControlName="optionC">
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Option D (optional)</mat-label>
+              <input matInput formControlName="optionD">
+            </mat-form-field>
+          </div>
+          <p class="field-error" role="alert" *ngIf="questionForm.hasError('invalidOptionsOrIndex') && (attemptedSubmit || questionForm.controls['optionA'].touched || questionForm.controls['optionB'].touched || questionForm.controls['optionC'].touched || questionForm.controls['optionD'].touched || questionForm.controls['correctOptionIndex'].touched)">
+            Options must be filled in order, with at least A and B. Choose a correct answer that has text.
+          </p>
         </div>
 
         <!-- Metadata -->
@@ -33,8 +53,15 @@
 
           <div class="form-grid">
             <mat-form-field appearance="outline">
-              <mat-label>Correct Option Index</mat-label>
-              <input matInput type="number" formControlName="correctOptionIndex">
+              <mat-label>Correct Answer</mat-label>
+              <mat-select formControlName="correctOptionIndex">
+                <mat-option *ngFor="let label of optionLabels; let i = index"
+                  [value]="i"
+                  [disabled]="!questionForm.controls['option' + label].value">
+                  Option {{ label }}<ng-container *ngIf="questionForm.controls['option' + label].value"> — {{ questionForm.controls['option' + label].value }}</ng-container>
+                </mat-option>
+              </mat-select>
+              <mat-hint>Select the correct answer.</mat-hint>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
@@ -48,7 +75,7 @@
 
             <mat-form-field appearance="outline">
               <mat-label>Marks</mat-label>
-              <input matInput type="number" formControlName="marks">
+              <input matInput type="number" min="1" step="1" formControlName="marks">
             </mat-form-field>
           </div>
 
@@ -66,7 +93,7 @@
 
             <!-- Topic Dropdown -->
             <mat-form-field appearance="outline">
-              <mat-label>Topic</mat-label>
+            <mat-label>Topic</mat-label>
               <mat-select formControlName="topic" [disabled]="topics.length === 0">
                 <mat-option *ngFor="let t of topics" [value]="t.name">
                   {{ t.name }}
@@ -80,8 +107,8 @@
 
         <!-- Actions -->
         <div class="action-row">
-          <button mat-raised-button color="primary" (click)="submit()">
-            {{ isEditMode ? 'Update Question' : 'Add Question' }}
+          <button mat-raised-button color="primary" type="button" (click)="submit()" [disabled]="saving">
+            {{ saving ? 'Saving…' : (isEditMode ? 'Update Question' : 'Add Question') }}
           </button>
 
           <button *ngIf="isEditMode" mat-button type="button" (click)="reset()">
@@ -105,11 +132,19 @@
       <div class="filter-bar">
         <mat-form-field appearance="outline">
           <mat-label>Subject</mat-label>
-          <mat-select [(ngModel)]="filters.subject" (selectionChange)="onFilterChange()">
+          <mat-select [(ngModel)]="filters.subject" (selectionChange)="onFilterSubjectChange($event.value)">
             <mat-option value="">All</mat-option>
             <mat-option *ngFor="let s of subjects" [value]="s.name">
               {{ s.name }}
             </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Topic</mat-label>
+          <mat-select [(ngModel)]="filters.topic" (selectionChange)="onFilterChange()" [disabled]="!filters.subject">
+            <mat-option value="">All topics</mat-option>
+            <mat-option *ngFor="let t of filterTopics" [value]="t.name">{{ t.name }}</mat-option>
           </mat-select>
         </mat-form-field>
 
@@ -125,17 +160,18 @@
 
         <mat-form-field appearance="outline" class="search">
           <mat-label>Search</mat-label>
-          <input matInput placeholder="Search questions" [(ngModel)]="filters.q" (keyup)="onFilterChange()" />
+          <input matInput placeholder="Search questions" [(ngModel)]="filters.q" (ngModelChange)="onSearchInput($event)" />
         </mat-form-field>
       </div>
 
       <mat-divider></mat-divider>
 
-      <div *ngIf="questions.length === 0" class="empty-state">
+      <div *ngIf="loading" class="loading-indicator" role="status">Updating questions…</div>
+      <div *ngIf="!loading && questions.length === 0" class="empty-state">
         No questions match the current filters.
       </div>
 
-      <table *ngIf="questions.length > 0" class="qb-table">
+      <table *ngIf="questions.length > 0" class="qb-table" [attr.aria-busy]="loading">
         <thead>
           <tr>
             <th>Question</th>
@@ -169,7 +205,7 @@
       </table>
 
       <div class="paginator-wrapper">
-        <mat-paginator [length]="totalElements" [pageSize]="pageSize" [pageSizeOptions]="[10, 20, 50]"
+        <mat-paginator [length]="totalElements" [pageIndex]="page" [pageSize]="pageSize" [pageSizeOptions]="[10, 20, 50]"
           (page)="onPageChange($event)">
         </mat-paginator>
       </div>

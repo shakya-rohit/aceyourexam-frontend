@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormArray,
@@ -18,14 +18,16 @@ import { MatCardModule } from '@angular/material/card';
 import { MatStepper, MatStepperModule } from '@angular/material/stepper';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatPaginatorModule } from '@angular/material/paginator';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { FormsModule } from '@angular/forms';
 
 import { ApiService } from '../../services/api.service';
-import { state } from '@angular/animations';
 import { MatOption } from "@angular/material/core";
 import { MatSelect } from "@angular/material/select";
 import { QuestionBankService } from '../../services/question-bank.service';
 import { ExamTypesService } from '../../services/exam-types.service';
 import { Subject, SubjectService, Topic } from '../../services/subject.service';
+import { Subject as RxSubject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-create-exam',
@@ -43,18 +45,32 @@ import { Subject, SubjectService, Topic } from '../../services/subject.service';
     MatDividerModule,
     MatOption,
     MatSelect,
-    MatPaginatorModule
+    MatPaginatorModule,
+    FormsModule,
+    MatSnackBarModule
   ],
   templateUrl: './create-exam.component.html',
-  styleUrls: ['./create-exam.component.scss']
+  styleUrls: ['./create-exam.component.css']
 })
-export class CreateExamComponent implements OnInit {
+export class CreateExamComponent implements OnInit, OnDestroy {
+
+  private readonly searchChanges = new RxSubject<string>();
+  private readonly destroy$ = new RxSubject<void>();
+  private questionBankRequestId = 0;
 
   examForm!: FormGroup;
   submitting = false;
 
   isEditMode = false;
   examId!: string;
+  examStatus = '';
+  examLoadError = false;
+  loadingExam = false;
+  questionBankError = '';
+
+  get isPublished(): boolean {
+    return this.examStatus.toUpperCase() === 'PUBLISH';
+  }
 
   editingQuestionIndex: number | null = null;
   isAddingQuestion = false;
@@ -66,7 +82,8 @@ export class CreateExamComponent implements OnInit {
     subject: '',
     topic: '',
     difficulty: [] as string[],
-    q: ''
+    q: '',
+    examTypeId: null as number | null
   };
 
 
@@ -154,6 +171,7 @@ export class CreateExamComponent implements OnInit {
       },
       error: () => {
         this.loadingSelectedQuestions = false;
+        this.showError('Could not load this exam’s selected questions. Please try again.');
       }
     });
   }
@@ -207,6 +225,7 @@ export class CreateExamComponent implements OnInit {
   addingFromBank = false;
 
   toggleQuestionBankSelection(qb: any) {
+    if (this.isPublished) return;
     if (this.selectedQuestionBankIds.has(qb.id)) {
       this.selectedQuestionBankIds.delete(qb.id);
     } else {
@@ -219,7 +238,7 @@ export class CreateExamComponent implements OnInit {
   }
 
   addFromQuestionBank() {
-    if (this.selectedQuestionBankIds.size === 0 || !this.examId) return;
+    if (this.isPublished || this.selectedQuestionBankIds.size === 0 || !this.examId) return;
 
     this.addingFromBank = true;
 
@@ -243,12 +262,13 @@ export class CreateExamComponent implements OnInit {
         },
         error: () => {
           this.addingFromBank = false;
+          this.showError('Could not add questions to this exam. Please try again.');
         }
       });
   }
 
   removeQuestion(questionId: number) {
-    if (!this.examId) return;
+    if (this.isPublished || !this.examId) return;
 
     this.service
       .removeQuestionFromExam(this.examId, questionId)
@@ -258,7 +278,7 @@ export class CreateExamComponent implements OnInit {
           this.loadSelectedQuestions();
         },
         error: () => {
-          console.error('Failed to remove question from exam');
+          this.showError('Could not remove the question. Please try again.');
         }
       });
   }
@@ -267,10 +287,23 @@ export class CreateExamComponent implements OnInit {
   loadingQuestionBank = false;
 
   loadQuestionBank() {
+    const requestId = ++this.questionBankRequestId;
+    const examTypeId = this.examDetailsGroup?.get('examTypeId')?.value;
+    if (!examTypeId) {
+      this.allQuestionBank = [];
+      this.pagedQuestionBank = [];
+      this.loadingQuestionBank = false;
+      this.questionBankError = '';
+      return;
+    }
+
+    this.filters.examTypeId = Number(examTypeId);
     this.loadingQuestionBank = true;
+    this.questionBankError = '';
 
     this.questionBankService.search(this.filters).subscribe({
       next: (res) => {
+        if (requestId !== this.questionBankRequestId) return;
         this.allQuestionBank = res || [];
         this.pageIndex = 0;
         this.updatePagedQuestions();
@@ -278,7 +311,9 @@ export class CreateExamComponent implements OnInit {
         this.loadingQuestionBank = false;
       },
       error: () => {
+        if (requestId !== this.questionBankRequestId) return;
         this.loadingQuestionBank = false;
+        this.questionBankError = 'Could not load the question bank. Please try again.';
       }
     });
   }
@@ -296,27 +331,25 @@ export class CreateExamComponent implements OnInit {
   }
 
 
-  onSearchChange(value: string) {
-    this.filters.q = value;
-    this.loadQuestionBank();
-  }
-
-  onSearchChangeInput(event: Event) {
-    const input = event.target as HTMLInputElement;
-    this.onSearchChange(input.value);
+  onSearchChangeInput(value: string) {
+    this.searchChanges.next(value);
   }
 
   onSubjectChange(value: string) {
+    if (this.isPublished) return;
     this.filters.subject = value;
+    this.filters.topic = '';
     this.loadQuestionBank();
   }
 
   onTopicChange(value: string) {
+    if (this.isPublished) return;
     this.filters.topic = value;
     this.loadQuestionBank();
   }
 
   onDifficultyToggle(level: string, checked: boolean) {
+    if (this.isPublished) return;
     if (checked && !this.filters.difficulty.includes(level)) {
       this.filters.difficulty.push(level);
     } else if (!checked) {
@@ -326,13 +359,20 @@ export class CreateExamComponent implements OnInit {
   }
 
   resetFilters() {
+    if (this.isPublished) return;
     this.filters = {
       subject: '',
       topic: '',
       difficulty: [],
-      q: ''
+      q: '',
+      examTypeId: this.examDetailsGroup.get('examTypeId')?.value || null
     };
+    this.searchChanges.next('');
     this.loadQuestionBank();
+  }
+
+  backToExamList(): void {
+    this.router.navigate(['/exam-list']);
   }
 
 
@@ -347,7 +387,8 @@ export class CreateExamComponent implements OnInit {
     private examTypeService: ExamTypesService,
     private subjectService: SubjectService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private snackBar: MatSnackBar
   ) { }
 
   subjects: Subject[] = [];
@@ -362,7 +403,7 @@ export class CreateExamComponent implements OnInit {
         title: ['', Validators.required],
         description: [''],
         durationMinutes: [60, [Validators.required, Validators.min(1)]],
-        examTypeId: [1, Validators.required]
+        examTypeId: [null, Validators.required]
       }),
       questions: this.fb.array([])
     });
@@ -379,7 +420,25 @@ export class CreateExamComponent implements OnInit {
     this.loadQuestionBank();
     this.fetchExamTypes();
 
+    this.searchChanges.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      takeUntil(this.destroy$)
+    ).subscribe(value => {
+      this.filters.q = value;
+      this.loadQuestionBank();
+    });
 
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.searchChanges.complete();
+  }
+
+  private showError(message: string): void {
+    this.snackBar.open(message, 'Dismiss', { duration: 5000 });
   }
 
   /* ---------------- GETTERS ---------------- */
@@ -404,13 +463,26 @@ export class CreateExamComponent implements OnInit {
   /* ---------------- LOAD (EDIT MODE) ---------------- */
 
   loadExamForEdit() {
-    this.service.getExamById(this.examId).subscribe(exam => {
-      this.examForm.get('examDetails')?.patchValue({
-        title: exam.title,
-        description: exam.description,
-        durationMinutes: exam.durationMinutes,
-        examTypeId: exam.examTypeId
-      });
+    this.loadingExam = true;
+    this.service.getExamById(this.examId).subscribe({
+      next: exam => {
+        this.loadingExam = false;
+        this.examStatus = String(exam.status || 'DRAFT').toUpperCase();
+        this.examForm.get('examDetails')?.patchValue({
+          title: exam.title,
+          description: exam.description,
+          durationMinutes: exam.durationMinutes,
+          examTypeId: exam.examTypeId
+        });
+        this.filters.examTypeId = Number(exam.examTypeId);
+        this.loadQuestionBank();
+        this.fetchSubjects();
+      },
+      error: () => {
+        this.loadingExam = false;
+        this.examLoadError = true;
+        this.showError('Could not load the exam. Return to the exam list and try again.');
+      }
     });
 
     // this.service.getQuestionsByExam(+this.examId).subscribe(questions => {
@@ -501,9 +573,7 @@ export class CreateExamComponent implements OnInit {
   }
 
   saveNewQuestion() {
-    if (this.newQuestionForm.invalid) return;
-    this.questions.push(this.newQuestionForm);
-    this.isAddingQuestion = false;
+    if (this.isPublished || this.newQuestionForm.invalid) return;
 
     const data = this.newQuestionForm.value;
 
@@ -516,8 +586,12 @@ export class CreateExamComponent implements OnInit {
       correctOptionIndex: data.options.findIndex((o: any) => o.correct)
     };
     this.service.addQuestionsInExam(this.examId, [payload]).subscribe({
-      next: () => console.log("Question saved sunncessfully"),
-      error: () => console.log("Failed to save questions")
+      next: () => {
+        this.questions.push(this.newQuestionForm);
+        this.isAddingQuestion = false;
+        this.loadSelectedQuestions();
+      },
+      error: () => this.showError('Could not add the question. Please try again.')
     });
   }
 
@@ -526,7 +600,7 @@ export class CreateExamComponent implements OnInit {
   }
 
   saveEditedQuestion() {
-    if (this.editingQuestionIndex === null) return;
+    if (this.isPublished || this.editingQuestionIndex === null) return;
 
     const index = this.editingQuestionIndex;
     const qGroup = this.questions.at(index) as FormGroup;
@@ -546,29 +620,30 @@ export class CreateExamComponent implements OnInit {
 
     this.service.updateQuestion(data.id, payload).subscribe({
       next: () => {
-        console.log('Question updated successfully');
         this.editingQuestionIndex = null;
       },
-      error: () => {
-        console.error('Failed to update question');
-      }
+      error: () => this.showError('Could not update the question. Please try again.')
     });
   }
 
   saveExam() {
+    if (this.isPublished) return;
     const payload = {
       ...this.examForm.value.examDetails,
       status: "DRAFT"
     };
 
     this.service.createExam(payload).subscribe({
-      next: () => console.log("Exam information saved successfully"),
-      error: () => this.submitting = false
+      next: () => {},
+      error: () => {
+        this.submitting = false;
+        this.showError('Could not create the exam. Please check the details and try again.');
+      }
     });
   }
 
   submit() {
-    if (this.examForm.invalid || this.submitting) return;
+    if (this.isPublished || this.examForm.invalid || this.submitting) return;
 
     this.submitting = true;
 
@@ -576,16 +651,22 @@ export class CreateExamComponent implements OnInit {
 
     req$.subscribe({
       next: () => this.router.navigate(['/exam-list']),
-      error: () => this.submitting = false
+      error: () => {
+        this.submitting = false;
+        this.showError('Could not publish the exam. Check that it has questions and try again.');
+      }
     });
   }
 
   isExamDetailsValid(): boolean {
-    const { title, durationMinutes } = this.examForm.controls;
-    return title.valid && durationMinutes.valid;
+    return this.examDetailsGroup.valid;
   }
 
   saveAndNext(stepper: MatStepper) {
+    if (this.isPublished) {
+      stepper.next();
+      return;
+    }
     this.fetchSubjects();
 
     // CREATE MODE → always save
@@ -605,6 +686,7 @@ export class CreateExamComponent implements OnInit {
   }
 
   createExamAndNext(stepper: MatStepper) {
+    if (this.isPublished) return;
     const payload = {
       ...this.examForm.value.examDetails,
       status: 'DRAFT'
@@ -620,11 +702,15 @@ export class CreateExamComponent implements OnInit {
         this.submitting = false;
         stepper.next();
       },
-      error: () => this.submitting = false
+      error: () => {
+        this.submitting = false;
+        this.showError('Could not create the exam. Please check the details and try again.');
+      }
     });
   }
 
   updateExamAndNext(stepper: MatStepper) {
+    if (this.isPublished) return;
     const payload = this.examForm.value.examDetails;
 
     this.submitting = true;
@@ -635,7 +721,10 @@ export class CreateExamComponent implements OnInit {
         this.submitting = false;
         stepper.next();
       },
-      error: () => this.submitting = false
+      error: () => {
+        this.submitting = false;
+        this.showError('Could not update the exam details. Please try again.');
+      }
     });
   }
 
@@ -650,8 +739,23 @@ export class CreateExamComponent implements OnInit {
         },
         error: () => {
           this.isLoading = false;
+          this.showError('Could not load exam types. Please refresh and try again.');
         }
       });
+  }
+
+  onExamTypeChange(examTypeId: number | null) {
+    if (this.isPublished) return;
+    this.filters.examTypeId = examTypeId ? Number(examTypeId) : null;
+    this.filters.subject = '';
+    this.filters.topic = '';
+    this.filters.difficulty = [];
+    this.filters.q = '';
+    this.searchChanges.next('');
+    this.subjectToTopicMapping.clear();
+    this.subjects = [];
+    this.fetchSubjects();
+    this.loadQuestionBank();
   }
 
   fetchSubjects() {
@@ -672,6 +776,7 @@ export class CreateExamComponent implements OnInit {
         },
         error: () => {
           this.isLoading = false;
+          this.showError('Could not load subjects for this exam type. Please try again.');
         }
       });
   }

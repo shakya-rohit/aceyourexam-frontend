@@ -12,7 +12,9 @@
         </div>
 
         <div class="header-right">
-            <button class="submit-btn" (click)="submitExam()">Submit</button>
+            <button class="submit-btn" (click)="submitExam()" [disabled]="isSubmitting || hasSubmitted">
+                {{ isSubmitting ? 'Submitting…' : 'Submit' }}
+            </button>
         </div>
     </div>
 

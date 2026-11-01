@@ -101,6 +101,12 @@ export class ApiService {
     });
   }
 
+  getQuestionsForAttempt(examId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/student/exams/${examId}/questions`, {
+      headers: this.getAuthHeaders()
+    });
+  }
+
   submitExam(examId: number, payload: any): Observable<any> {
     return this.http.post(`${this.baseUrl}/student/attempts/submit/${examId}`, payload, {
       headers: this.getAuthHeaders()
@@ -117,46 +123,11 @@ export class ApiService {
 
 
   // ----------- Profile ---------------
-  // getProfileByEmail(email: string): Observable<any> {
-  //   return this.http.get<any>(`${this.baseUrl}/auth/me/${email}`);
-  // }
 
-  // updateProfile(payload: { name?: string; /* other editable fields */ }): Observable<Partial<Profile>> {
-  //   return this.http.put<Partial<Profile>>(`${this.baseUrl}/api/auth/me`, payload);
-  // }
-
-  // changePassword(payload: { currentPassword: string; newPassword: string }): Observable<any> {
-  //   return this.http.post<any>(`${this.baseUrl}/api/auth/change-password`, payload);
-  // }
-
-
-  // ----------- Profile ---------------
-
-  // NOTE: some backends use /auth/me (GET) and /auth/me (PUT). Adjust paths if your backend differs.
-  getProfileByEmail(email: string): Observable<Profile> {
-    if (!email) {
-      // return dummy (client-side) so the UI can render in dev without token
-      return of({
-        id: '0',
-        name: 'Guest User',
-        email: 'guest@example.com',
-        createdAt: new Date().toISOString()
-      });
-    }
-    return this.http.get<Profile>(`${this.baseUrl}/student/auth/me/${encodeURIComponent(email)}`, {
+  getMyProfile(): Observable<Profile> {
+    return this.http.get<Profile>(`${this.baseUrl}/student/auth/me`, {
       headers: this.getAuthHeaders()
-    }).pipe(
-      // do not swallow errors here; let caller decide — but add a small catch to turn 404 into dummy
-      catchError(err => {
-        console.warn('getProfileByEmail failed, returning dummy', err);
-        return of({
-          id: '0',
-          name: 'Guest User',
-          email,
-          createdAt: new Date().toISOString()
-        } as Profile);
-      })
-    );
+    });
   }
 
   // update editable fields
@@ -165,14 +136,13 @@ export class ApiService {
       headers: this.getAuthHeaders()
     }).pipe(
       catchError(err => {
-        // return the payload as partial so UI can merge it locally if backend not ready
-        console.warn('updateProfile failed, returning payload fallback', err);
-        return of(payload);
+        console.error('updateProfile failed', err);
+        throw err;
       })
     );
   }
 
-  changePassword(payload: any): Observable<any> {
+  changePassword(payload: { currentPassword: string; newPassword: string }): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/student/auth/change-password`, payload, {
       headers: this.getAuthHeaders()
     }).pipe(
@@ -201,9 +171,8 @@ export class ApiService {
       // do NOT set Content-Type; browser will add boundary
     }).pipe(
       catchError(err => {
-        console.warn('uploadAvatar failed', err);
-        // return fake response so UI can continue
-        return of({ avatarUrl: this.getLocalDataUrl(fd) });
+        console.error('uploadAvatar failed', err);
+        throw err;
       })
     );
   }
@@ -214,8 +183,8 @@ export class ApiService {
       headers: this.getAuthHeaders()
     }).pipe(
       catchError(err => {
-        console.warn('deleteAvatar failed', err);
-        return of(null);
+        console.error('deleteAvatar failed', err);
+        throw err;
       })
     );
   }
@@ -245,18 +214,6 @@ export class ApiService {
   }
 
   // ---------- Helpers ----------
-  private getLocalDataUrl(fd: FormData): string | null {
-    // for offline/dummy fallback: attempt to extract a File and convert to data URL
-    try {
-      const avatar = (fd as any).get('avatar') as File;
-      if (!avatar) return null;
-      // NOTE: synchronous conversion isn't possible here without FileReader; return null and let UI keep preview
-      return null;
-    } catch {
-      return null;
-    }
-  }
-
   forgotPassword(email: string) {
     return this.http.post(`${this.baseUrl}/auth/forgot-password`, { email });
   }

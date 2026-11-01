@@ -28,6 +28,42 @@ table {
   width: 100%;
 }
 
+.filter-bar {
+  display: grid;
+  grid-template-columns: minmax(220px, 2fr) repeat(2, minmax(170px, 1fr));
+  gap: 1rem;
+  padding: 1rem 1rem 0;
+}
+
+.filter-bar mat-form-field {
+  width: 100%;
+}
+
+.results-summary {
+  color: #5f6368;
+  font-size: 0.9rem;
+  padding: 0 1rem 1rem;
+}
+
+.empty-state,
+.error-message {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: #666;
+}
+
+.error-message {
+  color: #b3261e;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+mat-paginator {
+  border-top: 1px solid #eee;
+}
+
 /* ================= STATUS CHIPS ================= */
 mat-chip {
   font-weight: 500;
@@ -48,4 +84,10 @@ mat-chip.published {
 mat-chip.locked {
   background-color: #fbe9e7;
   color: #d84315;
+}
+
+@media (max-width: 760px) {
+  .page-container { padding: 1rem; }
+  .filter-bar { grid-template-columns: 1fr; gap: 0; }
+  table { min-width: 700px; }
 }

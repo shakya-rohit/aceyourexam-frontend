@@ -1,168 +1,137 @@
-<div class="analysis-container">
-  <div class="analysis-header">
-    <div class="header-left">
-      <h2>{{ attemptData?.examTitle }}</h2>
-      <p class="meta">
-        📅 {{ attemptData?.submittedAt | date: "medium" }} • 🎯
-        {{ attemptData?.totalScore }}/720
-      </p>
-    </div>
+<main class="analysis-page" *ngIf="attemptData as attempt">
+  <div class="breadcrumb">Dashboard <span>›</span> Results <span>›</span> <strong>Attempt analysis</strong></div>
 
-    <div class="header-right">
-      <button
-        mat-stroked-button
-        color="primary"
-        class="ai-btn"
-        (click)="generateAIAnalysis()"
-        [disabled]="aiLoading"
-      >
+  <header class="analysis-header">
+    <div class="header-copy">
+      <h1>{{ attempt.examTitle }}</h1>
+      <p class="meta">📅 {{ attempt.submittedAt | date: "medium" }} <span>·</span> Attempt #{{ attemptId }}</p>
+    </div>
+    <div class="header-actions">
+      <button mat-stroked-button color="primary" class="back-button" (click)="backToResults()">← Back to results</button>
+      <button mat-raised-button class="ai-btn" (click)="generateAIAnalysis()" [disabled]="aiLoading">
         <span *ngIf="!aiLoading">🧠 AI Insights</span>
         <span *ngIf="aiLoading">Analyzing...</span>
       </button>
     </div>
-  </div>
+    <div class="score-card">
+      <strong>{{ attempt.totalScore }} <small>/ {{ attempt.totalMarks || 720 }}</small></strong>
+      <span>Final score</span>
+    </div>
+  </header>
 
-  <!-- 📊 Stats Summary Section -->
-  <div class="stats-section" *ngIf="attemptData">
-    <div class="stat-card">
-      <h4>Total Questions</h4>
-      <p>
-        {{ attemptData?.totalQuestions || attemptData?.questions?.length || 0 }}
-      </p>
-    </div>
-    <div class="stat-card correct">
-      <h4>Correct</h4>
-      <p>{{ attemptData?.correctCount }}</p>
-    </div>
-    <div class="stat-card incorrect">
-      <h4>Incorrect</h4>
-      <p>{{ attemptData?.wrongCount }}</p>
-    </div>
-    <div class="stat-card skipped">
-      <h4>Skipped</h4>
-      <p>{{ attemptData?.skippedCount }}</p>
-    </div>
-    <div class="stat-card">
-      <h4>Accuracy</h4>
-      <p>{{ attemptData?.accuracy | number: "1.0-2" }}%</p>
-    </div>
-  </div>
+  <section class="stats-section" aria-label="Attempt summary">
+    <article class="stat-card"><span>Questions</span><strong>{{ attempt.totalQuestions }}</strong></article>
+    <article class="stat-card correct"><span>Correct</span><strong>{{ attempt.correctCount }}</strong></article>
+    <article class="stat-card incorrect"><span>Incorrect</span><strong>{{ attempt.wrongCount }}</strong></article>
+    <article class="stat-card skipped"><span>Skipped</span><strong>{{ attempt.skippedCount }}</strong></article>
+    <article class="stat-card"><span>Accuracy</span><strong>{{ attempt.accuracy | number: "1.0-1" }}%</strong></article>
+  </section>
 
-  <div class="charts-section">
-    <div class="chart-card">
-      <h3>Overall Accuracy</h3>
-      <div class="pie-wrapper">
-        <canvas baseChart [data]="pieChartData" [type]="'doughnut'"></canvas>
+  <section class="overview-grid">
+    <article class="panel breakdown-card">
+      <div class="panel-heading">
+        <div><h2>Answer breakdown</h2><p>How your responses were marked</p></div>
       </div>
-      <!-- <p class="chart-hint">Distribution of your responses</p> -->
-    </div>
-
-    <div class="chart-card">
-      <h3>Subject-wise Performance</h3>
-      <div class="bar-wrapper">
-        <canvas
-          baseChart
-          [data]="barChartData"
-          [options]="barChartOptions"
-          [type]="'bar'"
-        ></canvas>
+      <div class="breakdown-content">
+        <div class="donut-wrap">
+          <canvas baseChart [data]="pieChartData" [options]="pieChartOptions" [type]="'doughnut'"></canvas>
+          <div class="donut-center"><strong>{{ attempt.accuracy | number: "1.0-1" }}%</strong><span>accuracy</span></div>
+        </div>
+        <div class="legend-list">
+          <div><i class="legend-dot is-correct"></i><span>Correct</span><strong>{{ attempt.correctCount }}</strong></div>
+          <div><i class="legend-dot is-incorrect"></i><span>Incorrect</span><strong>{{ attempt.wrongCount }}</strong></div>
+          <div><i class="legend-dot is-skipped"></i><span>Skipped</span><strong>{{ attempt.skippedCount }}</strong></div>
+        </div>
       </div>
-      <!-- <p class="chart-hint">Accuracy across subjects</p> -->
+    </article>
+
+    <article class="panel subject-card">
+      <div class="panel-heading">
+        <div><h2>Subject accuracy</h2><p>Correct answers as a share of questions in each subject</p></div>
+      </div>
+      <div class="subject-list" *ngIf="subjectStats.length; else noSubjectData">
+        <div class="subject-row" *ngFor="let subject of subjectStats">
+          <div class="subject-label">{{ subject.name }}</div>
+          <div class="subject-progress" role="progressbar" [attr.aria-label]="subject.name + ' accuracy'" [attr.aria-valuenow]="subject.accuracy" aria-valuemin="0" aria-valuemax="100">
+            <span [style.width.%]="subject.accuracy"></span>
+          </div>
+          <strong class="subject-percent">{{ subject.accuracy }}%</strong>
+          <small>{{ subject.correct }} correct of {{ subject.total }}</small>
+        </div>
+      </div>
+      <ng-template #noSubjectData><p class="empty-state">Subject breakdown is not available for this attempt.</p></ng-template>
+      <div class="takeaway" *ngIf="subjectStats.length">
+        <span class="takeaway-icon">💡</span>
+        <div><strong>Your next focus</strong>
+          <ng-container *ngIf="lowestSubjects.length; else oneSubject">{{ lowestSubjects.join(' and ') }} {{ lowestSubjects.length === 1 ? 'is' : 'are' }} your lowest-scoring subject{{ lowestSubjects.length === 1 ? '' : 's' }} this attempt.</ng-container>
+          <ng-template #oneSubject>Review this subject’s missed questions to build confidence.</ng-template>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <section class="insights-card" *ngIf="insights.length">
+    <div class="insights-title"><div><span class="eyebrow">ATTEMPT SUMMARY</span><h2>What this result tells you</h2></div><span class="insight-count">{{ insights.length }} insights</span></div>
+    <ul><li *ngFor="let insight of insights" [ngClass]="insight.type"><span class="insight-marker">{{ insight.type === 'positive' ? '✓' : insight.type === 'negative' ? '!' : '•' }}</span>{{ insight.message }}</li></ul>
+  </section>
+
+  <section class="ai-analysis-card" *ngIf="aiAnalysis">
+    <div class="ai-heading"><div><span class="eyebrow">PERSONALIZED COACHING</span><h2>AI performance insights 🤖</h2></div><span class="ai-badge">Generated for this attempt</span></div>
+    <p class="ai-summary">{{ aiAnalysis.summary }}</p>
+    <div class="ai-columns">
+      <div *ngIf="aiAnalysis.strengths?.length"><h3>✅ Strengths</h3><ul><li *ngFor="let strength of aiAnalysis.strengths">{{ strength }}</li></ul></div>
+      <div *ngIf="aiAnalysis.improvements?.length"><h3>⚠ Areas to improve</h3><ul><li *ngFor="let improvement of aiAnalysis.improvements">{{ improvement }}</li></ul></div>
+      <div *ngIf="aiAnalysis.recommendations?.length"><h3>🎯 Recommendations</h3><ul><li *ngFor="let recommendation of aiAnalysis.recommendations">{{ recommendation }}</li></ul></div>
     </div>
-  </div>
+  </section>
 
-  <div class="insights-card" *ngIf="insights.length">
-    <h3>Insights 🧠</h3>
-    <ul>
-      <li *ngFor="let i of insights" [ngClass]="i.type">
-        {{ i.message }}
-      </li>
-    </ul>
-  </div>
-
-  <div class="ai-analysis-card" *ngIf="aiAnalysis">
-    <h3>AI Performance Insights 🤖</h3>
-
-    <p class="ai-summary">
-      {{ aiAnalysis.summary }}
-    </p>
-
-    <div *ngIf="aiAnalysis.strengths?.length">
-      <h4>✅ Strengths</h4>
-      <ul>
-        <li *ngFor="let s of aiAnalysis.strengths">{{ s }}</li>
-      </ul>
+  <section class="questions-section panel">
+    <div class="review-heading">
+      <div><h2>Review your questions</h2><p>Search the paper, filter by subject, or focus on answers to revisit.</p></div>
+      <span class="review-total">{{ filteredQuestions.length }} questions</span>
+    </div>
+    <div class="review-tools">
+      <label class="search-box"><span>⌕</span><input type="search" placeholder="Search question text" [(ngModel)]="searchTerm" (ngModelChange)="resetPage()" aria-label="Search question text"></label>
+      <select [(ngModel)]="selectedSubject" (ngModelChange)="resetPage()" aria-label="Filter by subject">
+        <option value="all">All subjects</option><option *ngFor="let subject of subjects" [value]="subject">{{ subject }}</option>
+      </select>
+      <div class="status-filters" aria-label="Filter questions by result">
+        <button type="button" [class.active]="selectedStatus === 'all'" (click)="setStatus('all')">All <span>{{ statusCounts.all }}</span></button>
+        <button type="button" [class.active]="selectedStatus === 'incorrect'" (click)="setStatus('incorrect')">Incorrect <span>{{ statusCounts.incorrect }}</span></button>
+        <button type="button" [class.active]="selectedStatus === 'skipped'" (click)="setStatus('skipped')">Skipped <span>{{ statusCounts.skipped }}</span></button>
+        <button type="button" [class.active]="selectedStatus === 'correct'" (click)="setStatus('correct')">Correct <span>{{ statusCounts.correct }}</span></button>
+      </div>
     </div>
 
-    <div *ngIf="aiAnalysis.improvements?.length">
-      <h4>⚠ Areas to Improve</h4>
-      <ul>
-        <li *ngFor="let i of aiAnalysis.improvements">{{ i }}</li>
-      </ul>
+    <div class="question-list" *ngIf="pagedQuestions.length; else noQuestions">
+      <article class="question-row" *ngFor="let question of pagedQuestions">
+        <span class="question-number">Q{{ questionNumber(question) }}</span>
+        <div class="question-copy">
+          <h3>{{ question.questionText }}</h3>
+          <div class="answer-details">
+            <span>Your answer: <strong>{{ optionLabel(question, question.selectedOptionIndex) }}</strong></span>
+            <span>Correct answer: <strong>{{ optionLabel(question, question.correctOptionIndex) }}</strong></span>
+            <span>{{ question.timeSpent ? (question.timeSpent + ' sec') : 'Time not recorded' }}</span>
+          </div>
+        </div>
+        <span class="question-status" [ngClass]="isSkipped(question) ? 'status-skipped' : question.isCorrect ? 'status-correct' : 'status-incorrect'">
+          {{ isSkipped(question) ? '↗ Skipped' : question.isCorrect ? '✓ Correct' : '✕ Incorrect' }}
+        </span>
+      </article>
     </div>
+    <ng-template #noQuestions><div class="empty-state question-empty">No questions match these filters. Try changing your search or filters.</div></ng-template>
 
-    <div *ngIf="aiAnalysis.recommendations?.length">
-      <h4>🎯 Recommendations</h4>
-      <ul>
-        <li *ngFor="let r of aiAnalysis.recommendations">{{ r }}</li>
-      </ul>
-    </div>
-  </div>
+    <footer class="pagination" *ngIf="filteredQuestions.length">
+      <span>Showing {{ pageStart }}–{{ pageEnd }} of {{ filteredQuestions.length }}</span>
+      <div class="page-controls">
+        <button type="button" (click)="changePage(currentPage - 1)" [disabled]="currentPage === 1" aria-label="Previous page">‹</button>
+        <span>Page {{ currentPage }} of {{ totalPages }}</span>
+        <button type="button" (click)="changePage(currentPage + 1)" [disabled]="currentPage === totalPages" aria-label="Next page">›</button>
+      </div>
+    </footer>
+  </section>
 
-  <div class="questions-section">
-    <h3>Question Analysis</h3>
-    <table>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Question</th>
-          <th>Your Answer</th>
-          <th>Correct Answer</th>
-          <th>Status</th>
-          <th>Time Spent</th>
-          <!-- ⏱️ Added -->
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let q of attemptData?.questions; index as i">
-          <td>{{ i + 1 }}</td>
-          <td>{{ q.questionText }}</td>
-          <td>
-            {{
-              q.selectedOptionIndex !== null &&
-              q.selectedOptionIndex !== undefined
-                ? q.selectedOptionIndex
-                : "-"
-            }}
-          </td>
-          <td>{{ q.correctOptionIndex }}</td>
-          <td
-            *ngIf="
-              q.selectedOptionIndex === null ||
-              q.selectedOptionIndex === undefined
-            "
-            class="skipped"
-          >
-            ⏩ Skipped
-          </td>
-          <td
-            *ngIf="
-              q.selectedOptionIndex !== null &&
-              q.selectedOptionIndex !== undefined
-            "
-            [class.correct]="q.isCorrect"
-            [class.incorrect]="!q.isCorrect"
-          >
-            {{ q.isCorrect ? "✔️" : "❌" }}
-          </td>
-          <td>{{ q.timeSpent ? q.timeSpent + "s" : "--" }}</td>
-          <!-- ⏱️ Added fallback -->
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  <div class="bottom-actions"><button mat-stroked-button color="primary" (click)="backToResults()">← Back to results</button></div>
+</main>
 
-  <button mat-raised-button color="primary" (click)="backToResults()">
-    Back to Results
-  </button>
-</div>
+<div class="loading-state" *ngIf="!attemptData"><span class="loading-spinner"></span><p>Loading your attempt analysis…</p></div>

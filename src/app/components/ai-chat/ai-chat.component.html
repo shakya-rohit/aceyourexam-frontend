@@ -1,25 +1,47 @@
-<div class="chat-wrapper">
-  <div class="messages" #scrollContainer>
-    <div *ngFor="let msg of messages" [ngClass]="msg.role === 'user' ? 'user-msg' : 'ai-msg'">
-      <div class="bubble" [innerHTML]="formatMessage(msg.text)"></div>
+<main class="chat-page">
+  <section class="messages" #scrollContainer role="log" aria-live="polite" aria-relevant="additions text">
+    <div class="welcome-state" *ngIf="messages.length === 0 && !loading">
+      <div class="welcome-icon" aria-hidden="true">✦</div>
+      <h1>What would you like to work on?</h1>
+      <p>Your study coach can help you understand results, plan revision, and practise the topics that need attention.</p>
+      <div class="history-note"><span aria-hidden="true">●</span> Answers can use your exam history when it helps</div>
+
+      <div class="starter-grid">
+        <button type="button" class="starter-card" *ngFor="let item of starterPrompts" (click)="sendStarter(item.prompt)">
+          <span class="starter-icon" aria-hidden="true">{{ item.icon }}</span>
+          <strong>{{ item.title }}</strong>
+          <small>{{ item.detail }}</small>
+        </button>
+      </div>
     </div>
 
-    <div *ngIf="loading" class="ai-msg">
-      <div class="bubble loading-bubble">Thinking...</div>
-    </div>
-  </div>
+    <div class="thread" *ngIf="messages.length > 0">
+      <div *ngFor="let msg of messages" class="message-row" [ngClass]="msg.role === 'user' ? 'user-row' : 'assistant-row'">
+        <span *ngIf="msg.role === 'assistant'" class="assistant-mark" aria-label="AI Coach">✦</span>
+        <div class="bubble" [innerHTML]="formatMessage(msg.text)"></div>
+      </div>
 
-  <div class="bottom-section">
-    <div class="suggestions">
-      <button *ngFor="let s of suggestions" (click)="sendQuick(s)">
-        {{ s }}
-      </button>
+      <div *ngIf="loading" class="message-row assistant-row" aria-label="AI Coach is thinking">
+        <span class="assistant-mark" aria-hidden="true">✦</span>
+        <div class="bubble thinking"><span></span><span></span><span></span><em>Thinking</em></div>
+      </div>
     </div>
+  </section>
 
-    <div class="input-box">
-      <input [(ngModel)]="userInput" (keyup.enter)="sendMessage()" placeholder="Ask AI Coach..." />
-
-      <button (click)="sendMessage()">➤</button>
+  <footer class="composer-dock">
+    <div class="composer-inner">
+      <div class="suggestions" *ngIf="suggestions.length" aria-label="Suggested prompts">
+        <button type="button" class="suggestion-chip" *ngFor="let suggestion of suggestions" [disabled]="loading" (click)="sendQuick(suggestion)">
+          {{ suggestion }}
+        </button>
+      </div>
+      <div class="composer">
+        <input #composerInput class="chat-composer" [(ngModel)]="userInput" name="message" (keydown.enter)="$event.preventDefault(); sendMessage()" [disabled]="loading" placeholder="Ask your AI coach anything…" aria-label="Message your AI coach" />
+        <button type="button" class="send-button" (click)="sendMessage()" [disabled]="loading || !userInput.trim()" aria-label="Send message">
+          <span aria-hidden="true">➤</span>
+        </button>
+      </div>
+      <p class="composer-note">AI responses can be imperfect. Check important study details against your course materials.</p>
     </div>
-  </div>
-</div>
+  </footer>
+</main>

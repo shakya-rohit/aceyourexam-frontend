@@ -1,265 +1,235 @@
-import { Component, OnInit, OnDestroy, Input, EventEmitter, Output, HostListener } from '@angular/core';
+import { Component, EventEmitter, HostListener, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 import { interval, Subscription } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
+import { QuestionBankService } from '../../services/question-bank.service';
 
-import { ApiService } from '../../services/api.service';
+type FeedbackMode = 'INSTANT' | 'END';
+type TimeMode = 'UNTIMED' | 'TIMED';
 
 @Component({
   selector: 'app-practice-runner',
   standalone: true,
   imports: [CommonModule, FormsModule, MatButtonModule],
   templateUrl: './practice-runner.component.html',
-  styleUrl: './practice-runner.component.css'
+  styleUrl: './practice-runner.component.css',
 })
 export class PracticeRunnerComponent implements OnInit, OnDestroy {
-
   @Input() questions: any[] = [];
-  currentIndex = 0;
-
+  @Input() sessionId: string | null = null;
+  @Input() submitError = '';
+  @Input() feedbackMode: FeedbackMode = 'END';
+  @Input() timeMode: TimeMode = 'TIMED';
+  @Input() timeLimitMinutes = 10;
+  @Input() testTitle = 'Practice test';
   @Output() finished = new EventEmitter<any>();
 
-
+  currentIndex = 0;
+  activeSectionIndex = 0;
   sections = [
     { name: 'Physics', questionIndexes: [] as number[] },
     { name: 'Chemistry', questionIndexes: [] as number[] },
-    { name: 'Biology', questionIndexes: [] as number[] }
+    { name: 'Biology', questionIndexes: [] as number[] },
   ];
-
-  activeSectionIndex = 0;
-
 
   markedForReview: Record<number, boolean> = {};
   visited: Record<number, boolean> = {};
-
-
-  exam: any;
-
-  answers: Record<number, any> = {};
+  answers: Record<number, number> = {};
   timeSpent: Record<number, number> = {};
-
-  // ⏱ Timer
   timeLeft = 0;
   formattedTime = '00:00';
   timerSub?: Subscription;
-
   questionStartTime = 0;
+  hasSubmitted = false;
+  isFullscreen = false;
 
-  constructor(
-    private api: ApiService,
-    private router: Router
-  ) { }
+  constructor(private questionBankService: QuestionBankService) {}
 
   ngOnInit(): void {
+    if (!this.questions?.length) return;
+    this.initializeQuestions();
 
-  this.timeLeft = 60;
-  this.startTimer();
-
-  if (!this.questions || this.questions.length === 0) {
-    console.warn('No questions received in PracticeRunner');
-    return;
+    if (this.timeMode === 'TIMED' && this.timeLimitMinutes > 0) {
+      this.timeLeft = Math.round(this.timeLimitMinutes * 60);
+      this.formattedTime = this.formatTime(this.timeLeft);
+      this.startTimer();
+    }
   }
 
-  this.initializeQuestions();
-}
+  get showFeedback(): boolean {
+    return this.feedbackMode === 'INSTANT';
+  }
 
-  /* ---------------- TIMER ---------------- */
-
-  startTimer() {
+  private startTimer(): void {
     this.timerSub = interval(1000).subscribe(() => {
-      this.timeLeft--;
+      if (this.hasSubmitted) return;
+      this.timeLeft = Math.max(0, this.timeLeft - 1);
       this.formattedTime = this.formatTime(this.timeLeft);
-
-      if (this.timeLeft <= 0) {
-        this.submitExam();
-      }
+      if (this.timeLeft <= 0) this.submitExam();
     });
   }
 
-  formatTime(sec: number): string {
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  private formatTime(seconds: number): string {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   }
 
-  initializeQuestions() {
+  private initializeQuestions(): void {
+    this.sections.forEach((section) => (section.questionIndexes = []));
+    this.questions = this.questions.map((question: any) => ({
+      ...question,
+      options: question.optionList || question.options || [],
+      answered: false,
+      selectedOptionIndex: null,
+    }));
 
-  this.sections.forEach(sec => sec.questionIndexes = []);
+    this.questions.forEach((question, index) => {
+      const sectionIndex = this.sections.findIndex((section) => section.name === question.subject);
+      if (sectionIndex >= 0) this.sections[sectionIndex].questionIndexes.push(index);
+    });
 
-  this.questions = this.questions.map((q: any) => ({
-    ...q,
-    options: q.optionList || q.options,
-    answered: false,
-    selectedOptionIndex: -1
-  }));
-
-  this.questions.forEach((q, index) => {
-    if (q.subject === 'Physics') {
-      this.sections[0].questionIndexes.push(index);
-    } else if (q.subject === 'Chemistry') {
-      this.sections[1].questionIndexes.push(index);
-    } else if (q.subject === 'Biology') {
-      this.sections[2].questionIndexes.push(index);
+    const firstSectionIndex = this.sections.findIndex((section) => section.questionIndexes.length > 0);
+    this.activeSectionIndex = Math.max(firstSectionIndex, 0);
+    if (firstSectionIndex >= 0) {
+      this.currentIndex = this.sections[firstSectionIndex].questionIndexes[0];
+      this.visited[this.questions[this.currentIndex].id] = true;
     }
-  });
-
-  this.activeSectionIndex = 0;
-
-  if (this.sections[0].questionIndexes.length > 0) {
-    this.currentIndex = this.sections[0].questionIndexes[0];
-    this.visited[this.questions[this.currentIndex].id] = true;
+    this.questionStartTime = Date.now();
   }
 
-  this.questionStartTime = Date.now();
-}
-
-
-  goTo(index: number) {
+  goTo(index: number): void {
+    if (index < 0 || index >= this.questions.length || index === this.currentIndex) return;
     this.recordTime();
     this.currentIndex = index;
+    const sectionIndex = this.sections.findIndex((section) => section.questionIndexes.includes(index));
+    if (sectionIndex >= 0) this.activeSectionIndex = sectionIndex;
     this.visited[this.questions[index].id] = true;
     this.questionStartTime = Date.now();
   }
 
+  next(): void {
+    if (this.currentIndex < this.questions.length - 1) this.goTo(this.currentIndex + 1);
+  }
 
-  next() {
-    if (this.currentIndex < this.questions.length - 1) {
-      this.goTo(this.currentIndex + 1);
+  prev(): void {
+    if (this.currentIndex > 0) this.goTo(this.currentIndex - 1);
+  }
+
+  selectAnswer(questionId: number, optionIndex: number): void {
+    const question = this.questions.find((item) => item.id === questionId);
+    if (!question || question.answerPending || (this.feedbackMode === 'INSTANT' && question.answered)) return;
+    this.answers[questionId] = optionIndex;
+    question.selectedOptionIndex = optionIndex;
+    if (this.feedbackMode !== 'INSTANT') {
+      question.answered = true;
+      return;
     }
-  }
 
-  prev() {
-    if (this.currentIndex > 0) {
-      this.goTo(this.currentIndex - 1);
+    if (!this.sessionId) {
+      question.selectedOptionIndex = null;
+      delete this.answers[questionId];
+      question.answerError = 'This practice session expired. Please restart.';
+      return;
     }
+    question.answerPending = true;
+    question.answerError = null;
+    this.questionBankService.submitPracticeAnswer({
+      sessionId: this.sessionId,
+      questionId,
+      selectedOptionIndex: optionIndex,
+    }).subscribe({
+      next: (result) => {
+        question.correctOptionIndex = result.correctOptionIndex;
+        question.isCorrect = result.isCorrect;
+        question.answered = true;
+        question.answerPending = false;
+      },
+      error: () => {
+        delete this.answers[questionId];
+        question.selectedOptionIndex = null;
+        question.answered = false;
+        question.answerPending = false;
+        question.answerError = 'Could not check this answer. Please try again.';
+      },
+    });
   }
 
-  /* ---------------- ANSWERS ---------------- */
-
-  selectAnswer(qId: number, optionIndex: number) {
-  this.answers[qId] = optionIndex;
-
-  const q = this.questions.find(q => q.id === qId);
-  if (q) {
-    q.selectedOptionIndex = optionIndex;
-    q.answered = true;
-  }
-}
-
-
-  recordTime() {
-    const q = this.questions[this.currentIndex];
-    if (!q) return;
-
-    const sec = Math.floor((Date.now() - this.questionStartTime) / 1000);
-    this.timeSpent[q.id] = (this.timeSpent[q.id] || 0) + sec;
+  recordTime(): void {
+    if (this.hasSubmitted) return;
+    const question = this.questions[this.currentIndex];
+    if (!question) return;
+    const seconds = Math.floor((Date.now() - this.questionStartTime) / 1000);
+    this.timeSpent[question.id] = (this.timeSpent[question.id] || 0) + seconds;
+    this.questionStartTime = Date.now();
   }
 
-  /* ---------------- SUBMIT ---------------- */
+  submitExam(): void {
+    if (this.hasSubmitted || !this.questions.length) return;
+    this.recordTime();
+    this.hasSubmitted = true;
+    this.timerSub?.unsubscribe();
 
-  submitExam() {
+    const answers = this.questions.map((question) => ({
+      questionId: Number(question.id),
+      selectedOptionIndex: this.answers[question.id] ?? null,
+    }));
+    this.finished.emit({
+      answers,
+    });
+  }
 
-    const total = this.questions.length;
-
-    const correct = this.questions.filter(q =>
-      this.answers[q.id] === q.correctOptionIndex
-    ).length;
-
-    const wrong = total - correct;
-
-    const skipped = total - Object.keys(this.answers).length;
-
-    const result = {
-      total,
-      correct,
-      wrong,
-      skipped,
-      percentage: Math.round((correct / total) * 100)
-    };
-
-    this.finished.emit(result);
+  retrySubmission(): void {
+    this.hasSubmitted = false;
   }
 
   ngOnDestroy(): void {
     this.timerSub?.unsubscribe();
-    this.recordTime();
+    if (!this.hasSubmitted) this.recordTime();
   }
 
-  get currentQuestion() {
+  get currentQuestion(): any {
     return this.questions[this.currentIndex];
   }
 
-  toggleReview() {
-    const qId = this.currentQuestion.id;
-    this.markedForReview[qId] = !this.markedForReview[qId];
+  toggleReview(): void {
+    if (!this.currentQuestion) return;
+    const questionId = this.currentQuestion.id;
+    this.markedForReview[questionId] = !this.markedForReview[questionId];
   }
 
-  isMarkedForReview(qId: number): boolean {
-    return !!this.markedForReview[qId];
+  isMarkedForReview(questionId: number): boolean {
+    return !!this.markedForReview[questionId];
   }
 
-  switchSection(index: number) {
-    this.recordTime();
-    this.activeSectionIndex = index;
-
-    const firstQuestionIndex = this.sections[index].questionIndexes[0];
+  switchSection(index: number): void {
+    const firstQuestionIndex = this.sections[index]?.questionIndexes[0];
     if (firstQuestionIndex !== undefined) {
-      this.currentIndex = firstQuestionIndex;
-      this.questionStartTime = Date.now();
+      this.activeSectionIndex = index;
+      this.goTo(firstQuestionIndex);
     }
   }
 
-  trackByIndex(index: number, value: any) {
-    return value;
+  trackByIndex(index: number): number {
+    return index;
   }
 
-  isFullscreen = false;
-
-  toggleFullscreen() {
-    if (!this.isFullscreen) {
-      this.enterFullscreen();
-    } else {
-      this.exitFullscreen();
-    }
-  }
-
-  enterFullscreen() {
-    const elem = document.documentElement;
-
-    if (elem.requestFullscreen) {
-      elem.requestFullscreen();
-    }
-
-    this.isFullscreen = true;
-  }
-
-  exitFullscreen() {
+  toggleFullscreen(): void {
     if (document.fullscreenElement) {
-      document.exitFullscreen();
+      void document.exitFullscreen();
+    } else {
+      void document.documentElement.requestFullscreen?.();
     }
-
-    this.isFullscreen = false;
   }
 
-  // ✅ Detect ESC key or browser exit
   @HostListener('document:fullscreenchange')
-  onFullscreenChange() {
+  onFullscreenChange(): void {
     this.isFullscreen = !!document.fullscreenElement;
   }
 
   @HostListener('document:keydown.f')
-  onFKey() {
+  onFKey(): void {
     this.toggleFullscreen();
   }
-
-  ngAfterViewInit() {
-    this.enterFullscreen();
-  }
-
-
-
-
-
 }

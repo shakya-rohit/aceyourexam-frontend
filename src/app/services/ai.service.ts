@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -15,10 +15,18 @@ export class AiService {
     const token = localStorage.getItem('AYE_TOKEN');
 
     if (!userData || !token) {
-      throw new Error('User not authenticated');
+      return throwError(() => new Error('User not authenticated'));
     }
 
-    const user = JSON.parse(userData);
+    let user: any;
+    try {
+      user = JSON.parse(userData);
+    } catch {
+      return throwError(() => new Error('User session is invalid'));
+    }
+    if (!user?.id) {
+      return throwError(() => new Error('User session is invalid'));
+    }
 
     return this.http.post(
       `${this.BASE_URL}/ask`,

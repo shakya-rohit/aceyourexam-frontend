@@ -5,7 +5,16 @@
       {{ isEditMode ? 'Edit Exam' : 'Create Exam' }}
     </h2>
 
-    <form [formGroup]="examForm">
+    <div class="status-banner published-banner" role="status" *ngIf="isPublished">
+      <strong>Published exam — read only.</strong> This exam is locked. You can review its details and questions, but cannot change or republish it.
+    </div>
+    <div class="status-banner error-banner" role="alert" *ngIf="examLoadError">
+      Could not load this exam. Return to the exam list and try again.
+      <button mat-button type="button" (click)="backToExamList()">Back to exams</button>
+    </div>
+    <div class="loading-exam" role="status" *ngIf="loadingExam">Loading exam details…</div>
+
+    <form [formGroup]="examForm" *ngIf="!examLoadError && !loadingExam">
       <mat-horizontal-stepper linear #stepper>
 
         <!-- STEP 1: EXAM DETAILS -->
@@ -19,24 +28,24 @@
 
                 <mat-form-field appearance="outline">
                   <mat-label>Exam Title *</mat-label>
-                  <input matInput formControlName="title" />
+                  <input matInput formControlName="title" [readonly]="isPublished" />
                 </mat-form-field>
 
                 <mat-form-field appearance="outline">
                   <mat-label>Duration (minutes) *</mat-label>
-                  <input matInput type="number" formControlName="durationMinutes" />
+                  <input matInput type="number" formControlName="durationMinutes" [readonly]="isPublished" />
                 </mat-form-field>
 
                 <mat-form-field appearance="outline">
                   <mat-label>Exam Type</mat-label>
-                  <mat-select matInput formControlName="examTypeId">
+                  <mat-select matInput formControlName="examTypeId" [disabled]="isPublished" (selectionChange)="onExamTypeChange($event.value)">
                     <mat-option *ngFor="let exam of examTypes" [value]="exam.id">{{exam.name}}</mat-option>
                   </mat-select>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="full-width">
                   <mat-label>Description</mat-label>
-                  <textarea matInput formControlName="description"></textarea>
+                  <textarea matInput formControlName="description" [readonly]="isPublished"></textarea>
                 </mat-form-field>
 
               </div>
@@ -49,7 +58,7 @@
               mat-raised-button
               color="primary"
               (click)="saveAndNext(stepper)"
-              [disabled]="examDetailsGroup.invalid || submitting">
+              [disabled]="examDetailsGroup.invalid || submitting || (isPublished && !isEditMode)">
               Next
             </button>
           </div>
@@ -63,7 +72,7 @@
           <div class="questions-header">
             <h3>Questions ({{ selectedQuestions.length }} selected)</h3>
             <button mat-raised-button color="primary" (click)="addFromQuestionBank()"
-              [disabled]="selectedQuestionBankIds.size === 0 || addingFromBank">
+              [disabled]="isPublished || selectedQuestionBankIds.size === 0 || addingFromBank">
               Add from Question Bank
             </button>
 
@@ -78,7 +87,7 @@
 
               <mat-form-field appearance="outline">
                 <mat-label>Subject</mat-label>
-                <mat-select (selectionChange)="onSubjectChange($event.value)">
+                <mat-select [(ngModel)]="filters.subject" [ngModelOptions]="{standalone: true}" [disabled]="isPublished" (selectionChange)="onSubjectChange($event.value)">
                   <mat-option value="">All</mat-option>
                   <mat-option *ngFor="let subject of subjects" [value]="subject.name">{{subject.name}}</mat-option>
                 </mat-select>
@@ -87,7 +96,7 @@
 
               <mat-form-field appearance="outline">
                 <mat-label>Topic</mat-label>
-                <mat-select (selectionChange)="onTopicChange($event.value)">
+                <mat-select [(ngModel)]="filters.topic" [ngModelOptions]="{standalone: true}" [disabled]="isPublished || !filters.subject" (selectionChange)="onTopicChange($event.value)">
                   <mat-option value="">All</mat-option>
                   <mat-option *ngFor="let topic of subjectToTopicMapping.get(filters.subject)" [value]="topic.name">{{topic.name}}</mat-option>
                 </mat-select>
@@ -95,21 +104,21 @@
               </mat-form-field>
 
               <div class="difficulty-filters">
-                <mat-checkbox (change)="onDifficultyToggle('EASY', $event.checked)">
+                <mat-checkbox [checked]="filters.difficulty.includes('EASY')" [disabled]="isPublished" (change)="onDifficultyToggle('EASY', $event.checked)">
                   Easy
                 </mat-checkbox>
 
-                <mat-checkbox (change)="onDifficultyToggle('MEDIUM', $event.checked)">
+                <mat-checkbox [checked]="filters.difficulty.includes('MEDIUM')" [disabled]="isPublished" (change)="onDifficultyToggle('MEDIUM', $event.checked)">
                   Medium
                 </mat-checkbox>
 
-                <mat-checkbox (change)="onDifficultyToggle('HARD', $event.checked)">
+                <mat-checkbox [checked]="filters.difficulty.includes('HARD')" [disabled]="isPublished" (change)="onDifficultyToggle('HARD', $event.checked)">
                   Hard
                 </mat-checkbox>
 
               </div>
 
-              <button mat-stroked-button color="primary" (click)="resetFilters()">
+              <button mat-stroked-button color="primary" [disabled]="isPublished" (click)="resetFilters()">
                 Reset Filters
               </button>
 
@@ -122,14 +131,16 @@
               <mat-form-field appearance="outline" class="qb-search">
                 <mat-label>Search questions</mat-label>
                 <mat-icon matPrefix>search</mat-icon>
-                <input matInput (input)="onSearchChangeInput($event)" />
+                <input matInput [(ngModel)]="filters.q" [ngModelOptions]="{standalone: true}" (ngModelChange)="onSearchChangeInput($event)" [readonly]="isPublished" />
               </mat-form-field>
 
-              <ng-container *ngIf="!loadingQuestionBank; else qbLoading">
+              <p class="inline-status" role="status" *ngIf="loadingQuestionBank">Updating question results…</p>
+              <p class="inline-error" role="alert" *ngIf="questionBankError">{{ questionBankError }}</p>
 
+              <div [attr.aria-busy]="loadingQuestionBank">
                 <div class="qb-question" *ngFor="let q of pagedQuestionBank"
                   [class.selected]="selectedQuestionBankIds.has(q.id)">
-                  <mat-checkbox [checked]="selectedQuestionBankIds.has(q.id)" [disabled]="isAlreadyInExam(q)"
+                  <mat-checkbox [checked]="selectedQuestionBankIds.has(q.id)" [disabled]="isPublished || isAlreadyInExam(q)"
                     (change)="toggleQuestionBankSelection(q)">
                     <strong>{{ q.text }}</strong>
                   </mat-checkbox>
@@ -139,15 +150,10 @@
                   </div>
                 </div>
 
-                <div *ngIf="pagedQuestionBank.length === 0" style="color:#777;">
+                <div *ngIf="!loadingQuestionBank && !questionBankError && pagedQuestionBank.length === 0" style="color:#777;">
                   No questions found.
                 </div>
-
-              </ng-container>
-
-              <ng-template #qbLoading>
-                <p>Loading question bank...</p>
-              </ng-template>
+              </div>
 
               <mat-paginator *ngIf="allQuestionBank.length > 0" [length]="allQuestionBank.length" [pageSize]="pageSize"
                 [pageIndex]="pageIndex" [pageSizeOptions]="[5, 10, 20]" (page)="onPageChange($event)">
@@ -183,7 +189,7 @@
                     <button mat-icon-button color="primary" disabled>
                       <mat-icon>sync</mat-icon>
                     </button>
-                    <button mat-icon-button color="warn" (click)="removeQuestion(q.id)" matTooltip="Remove from exam">
+                    <button mat-icon-button color="warn" [disabled]="isPublished" (click)="removeQuestion(q.id)" matTooltip="Remove from exam">
                       <mat-icon>delete</mat-icon>
                     </button>
                   </div>
@@ -303,8 +309,8 @@
           <mat-card class="section-card publish-card">
             <h4>Final Confirmation</h4>
             <p>
-              Once published, this exam will be <strong>locked</strong> and cannot be edited.
-              Please review all details carefully before proceeding.
+              <ng-container *ngIf="!isPublished">Once published, this exam will be <strong>locked</strong> and cannot be edited. Please review all details carefully before proceeding.</ng-container>
+              <ng-container *ngIf="isPublished">This exam is already <strong>published and locked</strong>. You can review it, but no changes can be saved.</ng-container>
             </p>
           </mat-card>
 
@@ -325,12 +331,13 @@
             <button mat-button matStepperPrevious>Back</button>
 
             <div class="footer-right">
-              <span class="lock-note">
+              <span class="lock-note" *ngIf="!isPublished">
                 🔒 This action is irreversible
               </span>
-              <button mat-raised-button color="primary" (click)="submit()">
-                {{ isEditMode ? 'Update Exam' : 'Publish Exam' }}
+              <button mat-raised-button color="primary" *ngIf="!isPublished" [disabled]="submitting" (click)="submit()">
+                {{ submitting ? 'Publishing…' : (isEditMode ? 'Save and Publish Updates' : 'Publish Exam') }}
               </button>
+              <span class="published-label" *ngIf="isPublished">Already published</span>
             </div>
           </div>
         </mat-step>

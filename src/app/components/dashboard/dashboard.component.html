@@ -1,149 +1,142 @@
-<div class="dashboard-container">
-  <h2>Welcome, {{ user?.name || 'Student' }} 👋</h2>
-
-  <!-- ---------- SUMMARY CARDS ---------- -->
-  <div class="stats-section">
-    <mat-card class="stat-card">
-      <h3>{{ totalExams }}</h3>
-      <p>Total Exams Taken</p>
-    </mat-card>
-    <mat-card class="stat-card">
-      <h3>{{ averageScore }}</h3>
-      <p>Average Score</p>
-    </mat-card>
-    <mat-card class="stat-card">
-      <h3>{{ bestScore }}</h3>
-      <p>Best Score</p>
-    </mat-card>
-  </div>
-
-  <!-- ---------- PERFORMANCE CHART ---------- -->
-  <div class="chart-section" *ngIf="results.length">
-    <h3 class="chart-title">Performance Over Time</h3>
-    <!-- ---------- SUBJECT TOGGLES ---------- -->
-    <div class="subject-toggle">
-      <label *ngFor="let s of subjectFilters">
-        <input
-          type="checkbox"
-          [checked]="s.visible"
-          (change)="toggleDataset(s.label, $event)"
-        />
-        <span>{{ s.label }}</span>
-      </label>
-    </div>
-
-    <div class="chart-wrapper">
-      <canvas
-        baseChart
-        [data]="lineChartData"
-        [options]="lineChartOptions"
-        [type]="'line'">
-      </canvas>
-    </div>
-  </div>
-
-  <!-- ---------- RECOMMENDATIONS ---------- -->
-  <div class="recommendations" *ngIf="recommendations.length">
-    <h3>Recommendations for You</h3>
-    <ul>
-      <li *ngFor="let rec of recommendations">{{ rec }}</li>
-    </ul>
-  </div>
-
-  <mat-divider style="margin: 2rem 0;"></mat-divider>
-
-  <!-- ---------- EXAMS ---------- -->
-  <!-- <h3>Available Exams</h3>
-  <div class="exam-list">
-    <mat-card *ngFor="let exam of exams" class="exam-card">
-      <h3>{{ exam.title }}</h3>
-      <p>Duration: {{ exam.durationMinutes }} mins</p>
-      <p>Total Marks: {{ exam.totalMarks }}</p>
-      <button mat-raised-button color="primary" (click)="startExam(exam)">Start Exam</button>
-    </mat-card>
-  </div> -->
-
-  <!-- ---------- EXAMS WITH TABS ---------- -->
-<h3>Exams:</h3>
-
-<mat-tab-group
-  [(selectedIndex)]="selectedExamTab"
-  class="exam-tabs"
-  animationDuration="300ms">
-
-  <!-- UPCOMING (DEFAULT) -->
-  <mat-tab label="Upcoming">
-    <div class="exam-list">
-      <mat-card *ngFor="let exam of upcomingExams" class="exam-card">
-        <h3>{{ exam.title }}</h3>
-        <p>Duration: {{ exam.durationMinutes }} mins</p>
-        <p>Total Marks: {{ exam.totalMarks }}</p>
-        <button
-          mat-raised-button
-          color="primary"
-          (click)="startExam(exam)">
-          Start Exam
-        </button>
-      </mat-card>
-
-      <p *ngIf="!upcomingExams.length" class="empty-text">
-        No upcoming exams available.
-      </p>
-    </div>
-  </mat-tab>
-
-  <!-- ALL -->
-  <mat-tab label="All">
-    <div class="exam-list">
-      <mat-card *ngFor="let exam of exams" class="exam-card">
-        <h3>{{ exam.title }}</h3>
-        <p>Duration: {{ exam.durationMinutes }} mins</p>
-        <p>Total Marks: {{ exam.totalMarks }}</p>
-        <button
-          mat-raised-button
-          color="primary"
-          (click)="startExam(exam)">
-          Start Exam
-        </button>
-      </mat-card>
-    </div>
-  </mat-tab>
-
-  <!-- PAST -->
-  <mat-tab label="Past">
-    <div class="exam-list">
-      <mat-card *ngFor="let exam of pastExams" class="exam-card past-exam">
-        <h3>{{ exam.title }}</h3>
-        <p>Completed</p>
-      </mat-card>
-
-      <p *ngIf="!pastExams.length" class="empty-text">
-        You haven’t attempted any exams yet.
-      </p>
-    </div>
-  </mat-tab>
-
-</mat-tab-group>
-
-
-  <mat-divider style="margin: 2rem 0;"></mat-divider>
-
-  <!-- ---------- RESULTS ---------- -->
-  <div class="results-section">
-    <h3>Your Past Results:</h3>
-
-    <ng-container *ngIf="results.length; else noResults">
-      <div *ngFor="let r of results" class="result-card">
-        <mat-card>
-          <strong>{{ r.examTitle }}</strong>
-          <div class="result-score">{{ r.totalScore }} / 720</div>
-          <div class="result-date">Submitted: {{ r.submittedAt }}</div>
-        </mat-card>
+<main class="dashboard-page">
+  <div class="dashboard-content">
+    <header class="welcome-row">
+      <div>
+        <p class="eyebrow">STUDENT DASHBOARD</p>
+        <h1>Welcome back, {{ user?.name || 'Student' }} <span aria-hidden="true">👋</span></h1>
+        <p class="welcome-subtitle">Your next step toward a stronger score starts here.</p>
       </div>
-    </ng-container>
+      <div class="welcome-actions">
+        <button type="button" class="button button-secondary" (click)="openResults()">View results</button>
+        <button type="button" class="button button-primary" (click)="startPractice()">Prepare a test</button>
+      </div>
+    </header>
 
-    <ng-template #noResults>
-      <p>No past results yet. Take a test to see them here!</p>
-    </ng-template>
+    <section class="next-exam" aria-label="Recommended next exam">
+      <div class="next-exam-main">
+        <p class="next-exam-kicker">{{ recommendedExam ? (recommendedExamIsRetake ? 'KEEP BUILDING YOUR SCORE' : 'READY TO PRACTICE?') : 'BUILD YOUR NEXT PRACTICE' }}</p>
+        <ng-container *ngIf="recommendedExam; else noExamAvailable">
+          <h2>{{ recommendedExam.title }}</h2>
+          <p>{{ recommendedExam.durationMinutes || '—' }} minutes <span aria-hidden="true">·</span> {{ recommendedExam.totalMarks || 720 }} marks</p>
+          <button type="button" class="button next-exam-button" (click)="startExam(recommendedExam)">{{ recommendedExamIsRetake ? 'Retake exam' : 'Start exam' }}</button>
+        </ng-container>
+        <ng-template #noExamAvailable>
+          <h2>Choose what to work on today</h2>
+          <p>Build a focused practice test from subjects and topics in the question bank.</p>
+          <button type="button" class="button next-exam-button" (click)="startPractice()">Create a practice test</button>
+        </ng-template>
+      </div>
+      <div class="next-exam-aside" *ngIf="recommendedExam">
+        <span class="availability-chip">{{ recommendedExamIsRetake ? 'Ready for another attempt' : 'Available to start' }}</span>
+        <strong>{{ recommendedExamIsRetake ? 'Practice makes progress' : 'Keep your momentum going' }}</strong>
+        <span class="aside-copy">Your recent attempts and analysis are below.</span>
+      </div>
+    </section>
+
+    <section class="progress-metrics" aria-label="Your progress">
+      <article class="metric-card">
+        <div><span class="metric-label">Exams completed</span><span class="metric-detail">All recorded attempts</span></div>
+        <strong>{{ loadingResults || resultLoadError ? '—' : totalExams }}</strong>
+      </article>
+      <article class="metric-card">
+        <div><span class="metric-label">Average score</span><span class="metric-detail">{{ loadingResults ? 'Loading your results' : (resultLoadError ? 'Unable to load results' : (totalExams ? averageScorePercent + '% of available marks' : 'Complete an exam to get started')) }}</span></div>
+        <strong>{{ loadingResults || resultLoadError || !totalExams ? '—' : averageScore }}<small *ngIf="!loadingResults && !resultLoadError && totalExams"> pts</small></strong>
+      </article>
+      <article class="metric-card">
+        <div><span class="metric-label">Personal best</span><span class="metric-detail">{{ loadingResults || !totalExams ? 'Your highest score' : recentBestTitle }}</span></div>
+        <strong>{{ loadingResults || resultLoadError || !totalExams ? '—' : bestScore }}<small *ngIf="!loadingResults && !resultLoadError && totalExams"> / {{ bestScoreMax }}</small></strong>
+      </article>
+    </section>
+
+    <p class="inline-error" role="alert" *ngIf="resultLoadError">We couldn’t load your results right now. Your exam list is still available.</p>
+
+    <section class="dashboard-grid">
+      <article class="panel score-panel">
+        <div class="panel-heading">
+          <div><h2>Score progress</h2><p>Recent exams · percentage of available marks</p></div>
+          <button type="button" class="text-button" (click)="openResults()" *ngIf="results.length">See all results <span aria-hidden="true">→</span></button>
+        </div>
+        <div class="chart-area" *ngIf="results.length; else noScoreHistory">
+          <canvas baseChart [data]="chartData" [options]="chartOptions" [type]="'line'" aria-label="Score progress for recent attempts"></canvas>
+        </div>
+        <ng-template #noScoreHistory>
+          <div class="empty-panel-state">
+            <span class="empty-icon" aria-hidden="true">↗</span>
+            <strong>{{ loadingResults ? 'Loading your score history…' : 'Your progress will appear here' }}</strong>
+            <span *ngIf="!loadingResults">Complete an exam to see how your scores change over time.</span>
+          </div>
+        </ng-template>
+      </article>
+
+      <article class="panel subjects-panel">
+        <div class="panel-heading">
+          <div><h2>Subjects to focus on</h2><p>{{ subjectPerformance.length ? 'Accuracy on your latest attempt' : 'Turn your results into a next step' }}</p></div>
+          <button type="button" class="text-button" (click)="openLatestAnalysis()" *ngIf="results.length">View analysis <span aria-hidden="true">→</span></button>
+        </div>
+
+        <div class="subject-list" *ngIf="subjectPerformance.length; else noSubjectData">
+          <div class="subject-item" *ngFor="let subject of subjectPerformance">
+            <div class="subject-label-row"><span>{{ subject.name }}</span><strong>{{ subject.accuracy }}%</strong></div>
+            <div class="progress-track" role="progressbar" [attr.aria-label]="subject.name + ' accuracy'" [attr.aria-valuenow]="subject.accuracy" aria-valuemin="0" aria-valuemax="100">
+              <span [style.width.%]="subject.accuracy" [class.progress-strong]="subject.accuracy >= 60"></span>
+            </div>
+            <small>{{ subject.correct }} correct out of {{ subject.total }} questions</small>
+          </div>
+          <div class="focus-callout" *ngIf="weakestSubject">
+            <strong>Suggested next:</strong> Review {{ weakestSubject.name }} concepts, then try a short topic practice.
+          </div>
+          <button type="button" class="button button-secondary subject-action" (click)="startPractice()">Practice a subject</button>
+        </div>
+
+        <ng-template #noSubjectData>
+          <div class="empty-panel-state compact-state">
+            <strong>{{ loadingSubjects ? 'Loading subject results…' : 'Subject insights unlock after an exam' }}</strong>
+            <span *ngIf="!loadingSubjects">After your next attempt, we’ll show accuracy by subject and suggest where to focus.</span>
+          </div>
+          <button type="button" class="button button-secondary subject-action" (click)="startPractice()">Start a practice test</button>
+        </ng-template>
+      </article>
+    </section>
+
+    <section class="lower-grid">
+      <article class="panel attempts-panel">
+        <div class="panel-heading">
+          <div><h2>Recent attempts</h2><p>Your latest exam activity</p></div>
+          <button type="button" class="text-button" (click)="openResults()" *ngIf="results.length">View history <span aria-hidden="true">→</span></button>
+        </div>
+        <div *ngIf="recentAttempts.length; else noAttempts">
+          <button type="button" class="attempt-row" *ngFor="let attempt of recentAttempts" (click)="openAnalysis(attempt)">
+            <span class="attempt-copy"><strong>{{ attempt.examTitle }}</strong><small>{{ formattedDate(attempt.submittedAt) }} · {{ attempt.accuracy | number: '1.0-0' }}% accuracy</small></span>
+            <span class="attempt-result">{{ scoreLabel(attempt) }}<span aria-hidden="true">›</span></span>
+          </button>
+        </div>
+        <ng-template #noAttempts><div class="empty-inline">{{ loadingResults ? 'Loading attempts…' : 'No attempts yet. Start an exam to see your results here.' }}</div></ng-template>
+      </article>
+
+      <article class="panel actions-panel">
+        <div class="panel-heading"><div><h2>Quick actions</h2><p>Keep learning at your pace</p></div></div>
+        <button type="button" class="action-row" (click)="startPractice()">
+          <span class="action-icon practice-icon" aria-hidden="true">✎</span>
+          <span><strong>Build a practice test</strong><small>Choose topics, difficulty, and time</small></span>
+          <span class="action-arrow" aria-hidden="true">→</span>
+        </button>
+        <button type="button" class="action-row" (click)="openAiCoach()">
+          <span class="action-icon coach-icon" aria-hidden="true">✦</span>
+          <span><strong>Ask your AI coach</strong><small>Get help understanding your results</small></span>
+          <span class="action-arrow" aria-hidden="true">→</span>
+        </button>
+      </article>
+    </section>
+
+    <section class="available-section" *ngIf="additionalExams.length || examLoadError">
+      <div class="available-heading"><div><h2>More published exams</h2><p>{{ additionalExams.length }} more to explore · newest exams appear first</p></div></div>
+      <p class="inline-error" role="alert" *ngIf="examLoadError">We couldn’t load the exam list. Please try again later.</p>
+      <div class="available-list" *ngIf="!examLoadError">
+        <article class="available-card" *ngFor="let exam of additionalExams">
+          <div><strong>{{ exam.title }}</strong><span>{{ exam.durationMinutes || '—' }} min <span aria-hidden="true">·</span> {{ exam.totalMarks || 720 }} marks</span></div>
+          <button type="button" class="button button-secondary" (click)="startExam(exam)">{{ hasAttemptedExam(exam.id) ? 'Retake' : 'Start' }}</button>
+        </article>
+      </div>
+    </section>
   </div>
-</div>
+</main>

@@ -1,35 +1,107 @@
-<div class="results-container">
-  <h2>Your Results 🧾</h2>
-<p class="subtitle">You have attempted {{ results.length }} exams</p>
+<main class="results-page">
+  <div class="results-content">
+    <header class="results-heading">
+      <div>
+        <p class="eyebrow">YOUR PROGRESS</p>
+        <h1>Your results</h1>
+        <p class="heading-copy">Track your progress and choose what to work on next.</p>
+      </div>
+      <button type="button" class="button button-secondary" (click)="goToDashboard()">Back to dashboard</button>
+    </header>
 
+    <section class="summary-grid" aria-label="Results summary">
+      <article class="summary-card">
+        <div><span class="summary-label">Attempts</span><small>All recorded exams</small></div>
+        <strong>{{ loading ? '—' : (loadError ? '—' : totalAttempts) }}</strong>
+      </article>
+      <article class="summary-card">
+        <div><span class="summary-label">Average score</span><small>{{ loading ? 'Loading your results' : (loadError ? 'Unable to load results' : (totalAttempts ? averagePercent + '% of available marks' : 'Complete an exam to get started')) }}</small></div>
+        <strong>{{ loading || loadError || !totalAttempts ? '—' : averageScore }}<small *ngIf="!loading && !loadError && totalAttempts"> pts</small></strong>
+      </article>
+      <article class="summary-card">
+        <div><span class="summary-label">Personal best</span><small>{{ loading || loadError ? 'Your highest score' : (bestAttempt?.examTitle || 'Your highest score') }}</small></div>
+        <strong>{{ loading || loadError || !bestAttempt ? '—' : bestAttempt.totalScore }}<small *ngIf="!loading && !loadError && bestAttempt"> / {{ bestAttempt.maxScore }}</small></strong>
+      </article>
+    </section>
 
-  <ng-container *ngIf="results.length; else noResults">
-    <div class="results-list">
-      <mat-card
-  *ngFor="let r of results"
-  class="result-card"
-  [ngClass]="getScoreClass(r.totalScore)"
-  (click)="viewAnalysis(r)"
->
+    <p class="error-message" role="alert" *ngIf="loadError">We couldn’t load your results. Please try again later.</p>
 
-        <h3>{{ r.examTitle }}</h3>
-        <p><strong>Score:</strong> {{ r.totalScore }} / 720</p>
-        <p><strong>Date:</strong> {{ r.submittedAt }}</p>
-        <p class="feedback">{{ getFeedback(r.totalScore) }}</p>
-      </mat-card>
-    </div>
-  </ng-container>
+    <section class="results-overview" *ngIf="attempts.length; else emptyOrLoading">
+      <article class="panel trend-panel">
+        <div class="panel-heading">
+          <div><h2>Score trend</h2><p>Recent attempts · percentage of available marks</p></div>
+        </div>
+        <div class="chart-area">
+          <canvas baseChart [data]="chartData" [options]="chartOptions" [type]="'line'" aria-label="Score trend across recent attempts"></canvas>
+        </div>
+      </article>
 
-  <ng-template #noResults>
-  <p class="empty-state">
-    📭 No exams taken yet.  
-    <br />
-    Take your first exam to unlock performance insights!
-  </p>
-</ng-template>
+      <article class="panel latest-panel" *ngIf="latestAttempt as latest">
+        <div class="panel-heading"><div><h2>Latest attempt</h2><p>Your most recent completed exam</p></div></div>
+        <div class="latest-score-card">
+          <span class="latest-label">{{ latest.examTitle }} · {{ formattedDate(latest.submittedAt) }}</span>
+          <strong>{{ scoreLabel(latest) }}</strong>
+          <span class="score-change" *ngIf="scoreChange !== null" [class.negative-change]="scoreChange < 0" [class.neutral-change]="scoreChange === 0">{{ scoreChangeLabel }}</span>
+        </div>
+        <div class="previous-attempt" *ngIf="previousAttempt as previous">
+          <span><strong>Previous attempt</strong><small>{{ previous.examTitle }} · {{ formattedDate(previous.submittedAt) }}</small></span>
+          <strong>{{ scoreLabel(previous) }}</strong>
+        </div>
+        <p class="next-step"><strong>What next?</strong> Review your detailed analysis to see which questions to revisit.</p>
+        <button type="button" class="button button-primary analysis-button" (click)="viewAnalysis(latest)">View latest analysis</button>
+      </article>
+    </section>
 
+    <ng-template #emptyOrLoading>
+      <section class="panel empty-state" *ngIf="loading; else noResults">
+        <span class="loading-mark" aria-hidden="true">…</span>
+        <strong>Loading your results</strong>
+        <span>Your attempt history will appear here.</span>
+      </section>
+      <ng-template #noResults>
+        <section class="panel empty-state" *ngIf="!loadError">
+          <span class="empty-mark" aria-hidden="true">↗</span>
+          <strong>Your progress starts with your first exam</strong>
+          <span>Complete an exam to see your scores and detailed analysis here.</span>
+          <button type="button" class="button button-primary" (click)="goToPrepare()">Prepare a practice test</button>
+        </section>
+      </ng-template>
+    </ng-template>
 
-  <button mat-raised-button color="primary" (click)="goToDashboard()" style="margin-top: 2rem;">
-    Back to Dashboard
-  </button>
-</div>
+    <section class="panel history-panel" *ngIf="attempts.length">
+      <div class="history-heading">
+        <div><h2>All attempts</h2><p>Newest first · select an attempt to open its analysis</p></div>
+        <div class="history-filters">
+          <label>
+            <span class="sr-only">Filter by exam</span>
+            <select [(ngModel)]="selectedExamTitle" (ngModelChange)="onExamFilterChange()" aria-label="Filter results by exam">
+              <option value="ALL">All exams</option>
+              <option *ngFor="let title of examTitles" [value]="title">{{ title }}</option>
+            </select>
+          </label>
+          <label>
+            <span class="sr-only">Sort attempts</span>
+            <select [(ngModel)]="sortOrder" aria-label="Sort attempts">
+              <option value="NEWEST">Newest first</option>
+              <option value="OLDEST">Oldest first</option>
+              <option value="HIGHEST">Highest score</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="attempt-list" *ngIf="filteredAttempts.length; else noFilteredResults">
+        <button type="button" class="attempt-row" *ngFor="let attempt of filteredAttempts" (click)="viewAnalysis(attempt)">
+          <span class="attempt-main">
+            <strong>{{ attempt.examTitle }}</strong>
+            <small>{{ formattedDate(attempt.submittedAt) }} · {{ attempt.correctCount }} correct · {{ attempt.wrongCount }} incorrect</small>
+          </span>
+          <span class="attempt-accuracy"><strong>{{ attempt.accuracy | number: '1.0-0' }}%</strong><small>accuracy</small></span>
+          <span class="attempt-score" [ngClass]="scoreClass(attempt)">{{ scoreLabel(attempt) }}</span>
+          <span class="row-action">View analysis <span aria-hidden="true">→</span></span>
+        </button>
+      </div>
+      <ng-template #noFilteredResults><p class="empty-filter">No attempts match this exam.</p></ng-template>
+    </section>
+  </div>
+</main>

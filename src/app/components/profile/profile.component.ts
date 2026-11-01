@@ -1,7 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
-import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -19,7 +18,6 @@ import { Router } from '@angular/router';
   imports: [
     CommonModule,
     MatCardModule,
-    MatListModule,
     MatIconModule,
     MatButtonModule,
     MatProgressSpinnerModule,
@@ -41,6 +39,8 @@ export class ProfileComponent implements OnInit {
   user: any = { name: '', email: '' };
   stats: any = { examsTaken: 0, avgScore: 0, lastActive: new Date().toISOString() };
   isLoading = false;
+  isSavingProfile = false;
+  avatarUploading = false;
   avatarPreview: string | null = null;
   active: 'profile' | 'account' | 'security' | 'danger' = 'profile';
 
@@ -53,7 +53,7 @@ export class ProfileComponent implements OnInit {
 
   ngOnInit(): void { this.loadProfile(); }
 
-  select(section: any) { this.active = section; }
+  select(section: 'profile' | 'account' | 'security' | 'danger') { this.active = section; }
 
   get joinedText(): string {
     if (!this.user?.createdAt) return '';
@@ -80,14 +80,13 @@ export class ProfileComponent implements OnInit {
   }
 
   loadProfile() {
-    const token = localStorage.getItem('AYE_TOKEN');
     let userEmail: string | undefined;
     const userData = localStorage.getItem('AYE_USER');
     if (userData) {
       try { userEmail = JSON.parse(userData).email; } catch {}
     }
     this.isLoading = true;
-    this.api.getProfileByEmail(userEmail || '').subscribe({
+    this.api.getMyProfile().subscribe({
       next: (res) => {
         this.user = res || {};
         this.user.name = this.user.name || 'John Doe';
@@ -116,59 +115,94 @@ export class ProfileComponent implements OnInit {
     });
   }
 
-  saveProfile() {
-    if (this.editForm.invalid) return;
-    var email;
-    const userData = localStorage.getItem('AYE_USER');
-      if (userData) {
+  saveProfile(): void {
+    if (this.editForm.invalid || this.isSavingProfile) return;
+    const name = String(this.editForm.get('name')?.value || '').trim();
+    this.isSavingProfile = true;
+    this.api.updateProfile({ name }).subscribe({
+      next: () => {
+        this.user = { ...this.user, name };
+        this.initials = this.computeInitials(name);
         try {
-          const parsed = JSON.parse(userData);
-          email = parsed.email;
-        } catch {
-          console.error("Wrong user data", userData);
-          return;
-        }
-      }
-      
-    const payload = { name: this.editForm.value.name, email: email };
-    this.api.updateProfile(payload).subscribe({
-      next: (res) => {
-        this.user = { ...this.user, ...res };
-        // update initials in case name changed
-        this.initials = this.computeInitials(this.user.name);
+          const storedUser = JSON.parse(localStorage.getItem('AYE_USER') || '{}');
+          localStorage.setItem('AYE_USER', JSON.stringify({ ...storedUser, name }));
+        } catch { /* the profile remains saved on the server */ }
+        this.editForm.patchValue({ name });
+        this.editForm.markAsPristine();
         this.snack.open('Profile updated', 'OK', { duration: 2000 });
+        this.isSavingProfile = false;
       },
       error: (err) => {
         console.error(err);
-        this.snack.open('Failed to update profile', 'OK', { duration: 3000 });
+        this.snack.open('Failed to update profile. Please try again.', 'OK', { duration: 3000 });
+        this.isSavingProfile = false;
       }
     });
   }
 
-  onAvatarChange(event: any) {
-    const file: File = event.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => this.avatarPreview = reader.result as string;
-    reader.readAsDataURL(file);
+  cancelProfileEdit(): void {
+    this.editForm.patchValue({ name: this.user.name, email: this.user.email });
+    this.editForm.markAsPristine();
+  }
 
-    const fd = new FormData();
-    fd.append('avatar', file);
-    this.api.uploadAvatar(fd).subscribe({
-      next: (res) => {
-        if (res?.avatarUrl) { this.user.avatarUrl = res.avatarUrl; this.avatarPreview = res.avatarUrl; }
-        this.snack.open('Avatar uploaded', 'OK', { duration: 2000 });
-      },
-      error: (e) => { console.error(e); this.snack.open('Avatar upload failed', 'OK', { duration: 3000 }); }
-    });
+  onAvatarChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      this.snack.open('Choose a PNG, JPG, or WebP image.', 'OK', { duration: 3000 });
+      input.value = '';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      this.snack.open('Choose an image smaller than 5 MB.', 'OK', { duration: 3000 });
+      input.value = '';
+      return;
+    }
+
+    const previousPreview = this.avatarPreview;
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.avatarPreview = reader.result as string;
+      this.avatarUploading = true;
+      const fd = new FormData();
+      fd.append('avatar', file);
+      this.api.uploadAvatar(fd).subscribe({
+        next: (res) => {
+          this.avatarUploading = false;
+          if (res?.avatarUrl) {
+            this.user.avatarUrl = res.avatarUrl;
+            this.avatarPreview = res.avatarUrl;
+            this.snack.open('Avatar updated', 'OK', { duration: 2000 });
+          } else {
+            this.avatarPreview = previousPreview;
+            this.snack.open('Avatar upload is not available right now.', 'OK', { duration: 3000 });
+          }
+          input.value = '';
+        },
+        error: (err) => {
+          console.error(err);
+          this.avatarUploading = false;
+          this.avatarPreview = previousPreview;
+          this.snack.open('Avatar upload failed. Please try again.', 'OK', { duration: 3000 });
+          input.value = '';
+        }
+      });
+    };
+    reader.onerror = () => {
+      this.snack.open('Could not read that image. Please try another file.', 'OK', { duration: 3000 });
+      input.value = '';
+    };
+    reader.readAsDataURL(file);
   }
 
   removeAvatar() {
     if (!confirm('Remove avatar?')) return;
-    this.avatarPreview = null;
     this.api.deleteAvatar().subscribe({
-      next: () => { this.user.avatarUrl = null; this.snack.open('Avatar removed', 'OK', { duration: 2000 }); },
-      error: () => { this.user.avatarUrl = null; this.snack.open('Avatar removed locally', 'OK', { duration: 2000 }); }
+      next: () => { this.user.avatarUrl = null; this.avatarPreview = null; this.snack.open('Avatar removed', 'OK', { duration: 2000 }); },
+      error: (err) => { console.error(err); this.snack.open('Could not remove avatar. Please try again.', 'OK', { duration: 3000 }); }
     });
   }
 
@@ -247,19 +281,10 @@ export class ChangePasswordDialog {
       return;
     }
 
-    var email;
-    const userData = localStorage.getItem('AYE_USER');
-      if (userData) {
-        try {
-          const parsed = JSON.parse(userData);
-          email = parsed.email;
-        } catch {
-          console.error("Wrong user data", userData);
-          return;
-        }
-      }
-
-    const payload = { email: email, currentPassword: this.form.value.current, newPassword: this.form.value.newp };
+    const payload = {
+      currentPassword: this.form.value.current || '',
+      newPassword: this.form.value.newp || ''
+    };
     this.api.changePassword(payload).subscribe({
       next: () => { this.dialogRef.close({ success: true }); },
       error: (e) => { console.error(e); this.snack.open('Change failed', 'OK', { duration: 3000 }); }

@@ -1,110 +1,143 @@
-<div class="prepare-page" *ngIf="step !== 'TEST'">
-  <mat-card class="prepare-card">
-
-    <!-- ================= CONFIG ================= -->
+<main class="prepare-page" *ngIf="step !== 'TEST'">
+  <div class="prepare-content">
     <ng-container *ngIf="step === 'CONFIG'">
+      <header class="prepare-heading">
+        <p class="eyebrow">PERSONAL PRACTICE</p>
+        <h1>Build a practice test</h1>
+        <p>Choose how you want to practice. Topics are matched to your selected exam.</p>
+      </header>
 
-      <h2 class="title">Prepare Practice Test</h2>
+      <div class="prepare-layout">
+        <section class="setup-panel" aria-labelledby="setup-title">
+          <div class="panel-title"><span class="step-number">1</span><h2 id="setup-title">Set up your test</h2></div>
 
-      <!-- Total Questions -->
-      <div class="form-section">
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Total Questions</mat-label>
-          <input
-            matInput
-            type="number"
-            [(ngModel)]="totalQuestions"
-            (ngModelChange)="onTotalQuestionsChange()">
-        </mat-form-field>
-      </div>
-
-      <!-- Selection Mode -->
-      <div class="form-section">
-        <label class="section-label">Question Selection</label>
-        <mat-radio-group [(ngModel)]="mode" class="radio-row">
-          <mat-radio-button value="RANDOM">Random</mat-radio-button>
-          <mat-radio-button value="DIFFICULTY">Difficulty Based</mat-radio-button>
-        </mat-radio-group>
-      </div>
-
-      <!-- Feedback Mode -->
-      <div class="form-section">
-        <label class="section-label">Feedback Mode</label>
-        <mat-radio-group [(ngModel)]="feedbackMode" class="radio-row">
-          <mat-radio-button value="INSTANT">Instant Feedback</mat-radio-button>
-          <mat-radio-button value="END">Feedback at End</mat-radio-button>
-        </mat-radio-group>
-      </div>
-
-      <!-- Time Mode -->
-      <div class="form-section">
-        <label class="section-label">Time Mode</label>
-        <mat-radio-group [(ngModel)]="timeMode" class="radio-row">
-          <mat-radio-button value="UNTIMED">No Time Limit</mat-radio-button>
-          <mat-radio-button value="TIMED">Timed</mat-radio-button>
-        </mat-radio-group>
-
-        <div *ngIf="timeMode === 'TIMED'" style="margin-top:10px;">
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Time Limit (minutes)</mat-label>
-            <input matInput type="number" [(ngModel)]="timeLimitMinutes">
-          </mat-form-field>
-        </div>
-      </div>
-
-      <!-- Start Button -->
-      <button
-        mat-raised-button
-        color="primary"
-        class="start-btn"
-        [disabled]="totalQuestions <= 0"
-        (click)="startTest()">
-        Start Test
-      </button>
-
-      <!-- ================= QUICK TOPIC PRACTICE ================= -->
-      <div class="topic-section">
-        <h3 class="topic-title">Quick Topic Practice</h3>
-
-        <div class="topic-grid">
-          <div
-            class="topic-card"
-            *ngFor="let topic of topics"
-            (click)="startTopicPractice(topic.name)">
-
-            <div class="topic-icon">{{ topic.icon }}</div>
-            <div class="topic-name">{{ topic.name }}</div>
-            <div class="topic-sub">10 Questions</div>
-
+          <div class="setup-row question-count-row">
+            <label class="field-label" for="question-count">Number of questions</label>
+            <div class="number-field">
+              <input id="question-count" type="number" min="1" max="180" step="1" [(ngModel)]="totalQuestions" aria-describedby="question-count-hint">
+              <span>questions</span>
+            </div>
+            <p class="field-hint" id="question-count-hint">Choose from 1 to 180 questions.</p>
           </div>
-        </div>
+
+          <div class="setup-row">
+            <span class="field-label">Question selection</span>
+            <div class="choice-group" role="group" aria-label="Question selection">
+              <button type="button" class="choice-button" [class.selected]="mode === 'RANDOM'" [attr.aria-pressed]="mode === 'RANDOM'" (click)="mode = 'RANDOM'">Random</button>
+              <button type="button" class="choice-button" [class.selected]="mode === 'DIFFICULTY'" [attr.aria-pressed]="mode === 'DIFFICULTY'" (click)="mode = 'DIFFICULTY'">Difficulty based</button>
+            </div>
+            <div class="difficulty-mix" *ngIf="mode === 'DIFFICULTY'">
+              <label class="mix-field"><span>Easy</span><span class="mix-input"><input type="number" min="0" max="100" [ngModel]="difficultySplit.EASY" (ngModelChange)="onDifficultyShareChange('EASY', $event)"><small>%</small></span></label>
+              <label class="mix-field"><span>Medium</span><span class="mix-input"><input type="number" min="0" max="100" [ngModel]="difficultySplit.MEDIUM" (ngModelChange)="onDifficultyShareChange('MEDIUM', $event)"><small>%</small></span></label>
+              <div class="mix-field"><span>Hard</span><strong>{{ hardPercent }}%</strong></div>
+            </div>
+            <p class="field-hint" *ngIf="mode === 'DIFFICULTY'">The mix always adds up to 100%.</p>
+          </div>
+
+          <div class="setup-row">
+            <span class="field-label">When would you like feedback?</span>
+            <div class="choice-group" role="group" aria-label="Feedback timing">
+              <button type="button" class="choice-button" [class.selected]="feedbackMode === 'INSTANT'" [attr.aria-pressed]="feedbackMode === 'INSTANT'" (click)="feedbackMode = 'INSTANT'">After each question</button>
+              <button type="button" class="choice-button" [class.selected]="feedbackMode === 'END'" [attr.aria-pressed]="feedbackMode === 'END'" (click)="feedbackMode = 'END'">At the end</button>
+            </div>
+          </div>
+
+          <div class="setup-row">
+            <span class="field-label">Time limit</span>
+            <div class="choice-group" role="group" aria-label="Time limit">
+              <button type="button" class="choice-button" [class.selected]="timeMode === 'UNTIMED'" [attr.aria-pressed]="timeMode === 'UNTIMED'" (click)="timeMode = 'UNTIMED'">No time limit</button>
+              <button type="button" class="choice-button" [class.selected]="timeMode === 'TIMED'" [attr.aria-pressed]="timeMode === 'TIMED'" (click)="timeMode = 'TIMED'">Timed</button>
+            </div>
+            <div class="timer-setting" *ngIf="timeMode === 'TIMED'">
+              <label class="number-field time-field" for="time-limit"><input id="time-limit" type="number" min="1" max="600" step="1" [(ngModel)]="timeLimitMinutes"><span>minutes</span></label>
+              <span class="field-hint">Set the time you want for this test.</span>
+            </div>
+          </div>
+
+          <p class="error-message" role="alert" *ngIf="validationMessage">{{ validationMessage }}</p>
+          <p class="error-message" role="alert" *ngIf="errorMessage">{{ errorMessage }}</p>
+        </section>
+
+        <aside class="side-panel">
+          <section class="test-summary" aria-labelledby="summary-title">
+            <div class="summary-heading"><h2 id="summary-title">Your test</h2><span class="ready-chip">{{ loading ? 'Loading questions…' : (canStartTest ? 'Ready to start' : 'Check setup') }}</span></div>
+            <div class="summary-stats">
+              <div><strong>{{ totalQuestions || 0 }}</strong><span>Questions</span></div>
+              <div><strong>{{ timeSummary }}</strong><span>Time</span></div>
+              <div><strong>{{ mode === 'RANDOM' ? 'Random' : 'Difficulty' }}</strong><span>Selection</span></div>
+            </div>
+            <p class="summary-feedback">Feedback {{ feedbackSummary.toLowerCase() }}.</p>
+            <button type="button" class="start-button" [disabled]="!canStartTest" (click)="startTest()">{{ loading ? 'Loading questions…' : 'Start practice test' }}</button>
+          </section>
+
+          <section class="quick-topics" aria-labelledby="topics-title">
+            <div class="topics-heading">
+              <div><h2 id="topics-title">Quick topic practice</h2><p>Jump straight into a focused set</p></div>
+              <button
+                *ngIf="!topicsLoading && topics.length > 6"
+                type="button"
+                class="topics-toggle"
+                [attr.aria-expanded]="showAllTopics"
+                (click)="showAllTopics = !showAllTopics">
+                {{ showAllTopics ? 'Show less' : 'Show all (' + topics.length + ')' }}
+              </button>
+            </div>
+            <div class="topic-grid">
+              <button class="topic-card" type="button" *ngFor="let topic of visibleTopics" [disabled]="loading" (click)="startTopicPractice(topic.name)">
+                <span class="topic-icon" aria-hidden="true">{{ topic.icon }}</span>
+                <span class="topic-copy"><strong>{{ topic.name }}</strong><small>{{ topic.subject }} · 10 questions</small></span>
+                <span class="topic-arrow" aria-hidden="true">→</span>
+              </button>
+            </div>
+            <p class="topic-note" *ngIf="topicsLoading" role="status">Loading topics for your exam…</p>
+            <p class="topic-note" *ngIf="!topicsLoading && !topics.length">No topics are set up for your exam yet.</p>
+            <p class="topic-note" *ngIf="loading">Preparing your questions…</p>
+          </section>
+        </aside>
       </div>
-
     </ng-container>
 
-    <!-- ================= RESULT ================= -->
     <ng-container *ngIf="step === 'RESULT'">
+      <section class="result-panel">
+        <p class="eyebrow">PRACTICE COMPLETE</p>
+        <h1>{{ selectedTopic ? selectedTopic + ' practice' : 'Your practice results' }}</h1>
+        <p class="result-subtitle">You answered {{ total }} questions.</p>
+        <div class="result-score"><strong>{{ percentage }}%</strong><span>accuracy</span></div>
+        <div class="result-counts">
+          <div><strong>{{ correct }}</strong><span>Correct</span></div>
+          <div><strong>{{ wrong }}</strong><span>Incorrect</span></div>
+          <div><strong>{{ skipped }}</strong><span>Skipped</span></div>
+        </div>
 
-      <h2 class="title">Result</h2>
+        <details class="answer-review" *ngIf="reviewQuestions.length">
+          <summary>Review answers <span>({{ reviewQuestions.length }} questions)</span></summary>
+          <article class="review-question" *ngFor="let question of reviewQuestions">
+            <div class="review-question-heading"><strong>Question {{ question.questionNumber }}</strong><span [class.review-status-correct]="question.isCorrect" [class.review-status-wrong]="!question.isCorrect">{{ question.isCorrect ? 'Correct' : (question.selectedOptionIndex === null ? 'Skipped' : 'Review') }}</span></div>
+            <p class="review-question-text">{{ question.text }}</p>
+            <div class="review-options">
+              <div class="review-option" *ngFor="let option of (question.optionList || question.options); let i = index" [ngClass]="optionReviewClass(question, i)">
+                <span class="option-letter">{{ ['A', 'B', 'C', 'D', 'E'][i] || (i + 1) }}</span><span>{{ option }}</span>
+                <small *ngIf="i === question.correctOptionIndex">Correct answer</small>
+                <small *ngIf="i === question.selectedOptionIndex && !question.isCorrect">Your answer</small>
+              </div>
+            </div>
+          </article>
+        </details>
 
-      <h2>{{ percentage }}%</h2>
-
-      <p>Correct: {{ correct }}</p>
-      <p>Wrong: {{ wrong }}</p>
-      <p>Skipped: {{ total - (correct + wrong) }}</p>
-
-      <button mat-button (click)="restart()">
-        Practice Again
-      </button>
-
+        <button type="button" class="start-button restart-button" (click)="restart()">Build another practice test</button>
+      </section>
     </ng-container>
+  </div>
+</main>
 
-  </mat-card>
-</div>
-
-<!-- ================= TEST ================= -->
 <app-practice-runner
   *ngIf="step === 'TEST'"
   [questions]="questions"
+  [sessionId]="practiceSessionId"
+  [submitError]="practiceSubmitError"
+  [feedbackMode]="feedbackMode"
+  [timeMode]="timeMode"
+  [timeLimitMinutes]="timeLimitMinutes"
+  [testTitle]="selectedTopic || 'Custom practice test'"
   (finished)="onPracticeFinished($event)">
 </app-practice-runner>

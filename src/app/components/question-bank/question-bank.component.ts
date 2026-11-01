@@ -1,6 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -14,6 +14,8 @@ import { FormsModule } from '@angular/forms';
 import { QuestionBankService } from '../../services/question-bank.service';
 import { Subject, SubjectService, Topic } from '../../services/subject.service';
 import { MatDividerModule } from "@angular/material/divider";
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { Subject as RxSubject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-question-bank',
@@ -29,12 +31,16 @@ import { MatDividerModule } from "@angular/material/divider";
     MatIconModule,
     MatPaginatorModule,
     FormsModule,
-    MatDividerModule
+    MatDividerModule,
+    MatSnackBarModule
   ],
   templateUrl: './question-bank.component.html',
   styleUrls: ['./question-bank.component.css']
 })
-export class QuestionBankComponent implements OnInit {
+export class QuestionBankComponent implements OnInit, OnDestroy {
+
+  private readonly searchChanges = new RxSubject<string>();
+  private readonly destroy$ = new RxSubject<void>();
 
   questionForm!: FormGroup;
   questions: any[] = [];
@@ -46,6 +52,7 @@ export class QuestionBankComponent implements OnInit {
 
   subjects: Subject[] = [];
   topics: Topic[] = [];
+  filterTopics: Topic[] = [];
 
   selectedSubjectId: number | null = null;
   selectedTopicId: number | null = null;
@@ -54,6 +61,9 @@ export class QuestionBankComponent implements OnInit {
   page = 0;
   pageSize = 10;
   totalElements = 0;
+  loading = false;
+  saving = false;
+  attemptedSubmit = false;
 
   // filters (only for listing)
   filters = {
@@ -68,7 +78,8 @@ export class QuestionBankComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private questionBankService: QuestionBankService,
-    private subjectService: SubjectService
+    private subjectService: SubjectService,
+    private snackBar: MatSnackBar
   ) { }
 
   ngOnInit(): void {
@@ -76,22 +87,58 @@ export class QuestionBankComponent implements OnInit {
     this.loadQuestions();
     this.subjectService.getSubjects(true).subscribe(res => {
       this.subjects = res;
+      if (this.filters.subject) {
+        this.filterTopics = this.subjects.find(subject => subject.name === this.filters.subject)?.topics || [];
+      }
     });
+    this.searchChanges.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      takeUntil(this.destroy$)
+    ).subscribe(() => this.onFilterChange());
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.searchChanges.complete();
   }
 
   initForm() {
     this.questionForm = this.fb.group({
       text: ['', Validators.required],
-      options: ['', Validators.required],
+      optionA: ['', Validators.required],
+      optionB: ['', Validators.required],
+      optionC: [''],
+      optionD: [''],
       correctOptionIndex: [0, Validators.required],
       difficulty: ['EASY', Validators.required],
       marks: [1, Validators.required],
       subject: ['', Validators.required],
       topic: ['', Validators.required]
-    });
+    }, { validators: this.validateOptionsAndIndex });
+  }
+
+  private validateOptionsAndIndex = (control: AbstractControl): ValidationErrors | null => {
+    const rawIndex = control.get('correctOptionIndex')?.value;
+    const options = ['optionA', 'optionB', 'optionC', 'optionD']
+      .map(name => String(control.get(name)?.value || '').trim());
+    const enteredCount = options.filter(Boolean).length;
+    const hasGap = options.slice(0, enteredCount).some(option => !option);
+    if (rawIndex === null || rawIndex === '') return null;
+    const index = Number(rawIndex);
+    return enteredCount >= 2 && !hasGap
+      && Number.isInteger(index) && index >= 0 && index < enteredCount
+      ? null
+      : { invalidOptionsOrIndex: true };
+  };
+
+  get optionLabels(): string[] {
+    return ['A', 'B', 'C', 'D'];
   }
 
   loadQuestions() {
+    this.loading = true;
     this.questionBankService.getPaged({
       page: this.page,
       size: this.pageSize,
@@ -99,6 +146,10 @@ export class QuestionBankComponent implements OnInit {
     }).subscribe(res => {
       this.questions = res.content || [];
       this.totalElements = res.totalElements;
+      this.loading = false;
+    }, () => {
+      this.loading = false;
+      this.snackBar.open('Could not load questions. Please try again.', 'Dismiss', { duration: 4000 });
     });
   }
 
@@ -113,23 +164,57 @@ export class QuestionBankComponent implements OnInit {
     this.loadQuestions();
   }
 
+  onSearchInput(value: string): void {
+    this.searchChanges.next(value);
+  }
+
+  onFilterSubjectChange(subjectName: string) {
+    this.filterTopics = this.subjects.find(subject => subject.name === subjectName)?.topics || [];
+    if (!this.filterTopics.some(topic => topic.name === this.filters.topic)) this.filters.topic = '';
+    this.onFilterChange();
+  }
+
 
   submit() {
-    if (this.questionForm.invalid) return;
+    this.attemptedSubmit = true;
+    this.questionForm.markAllAsTouched();
+    if (this.questionForm.invalid || this.saving) return;
 
-    const payload = this.questionForm.value;
+    const formValue = this.questionForm.value;
+    const options = [formValue.optionA, formValue.optionB, formValue.optionC, formValue.optionD]
+      .map((option: string) => String(option || '').trim());
+    while (options.length && !options[options.length - 1]) options.pop();
+    const payload = {
+      text: formValue.text,
+      options: options.join(' || '),
+      correctOptionIndex: Number(formValue.correctOptionIndex),
+      difficulty: formValue.difficulty,
+      marks: Number(formValue.marks),
+      subject: formValue.subject,
+      topic: formValue.topic,
+    };
+    this.saving = true;
 
     if (this.isEditMode && this.editingId !== null) {
       this.questionBankService.update(this.editingId, payload).subscribe(() => {
+        this.saving = false;
+        this.snackBar.open('Question updated.', 'Dismiss', { duration: 2500 });
         this.reset();
         this.loadQuestions();
-      });
+      }, () => this.handleSaveError());
     } else {
       this.questionBankService.create(payload).subscribe(() => {
+        this.saving = false;
+        this.snackBar.open('Question added.', 'Dismiss', { duration: 2500 });
         this.reset();
         this.loadQuestions();
-      });
+      }, () => this.handleSaveError());
     }
+  }
+
+  private handleSaveError(): void {
+    this.saving = false;
+    this.snackBar.open('Could not save the question. Check the fields and try again.', 'Dismiss', { duration: 4000 });
   }
 
   edit(q: any) {
@@ -140,19 +225,32 @@ export class QuestionBankComponent implements OnInit {
     const subject = this.subjects.find(s => s.name === q.subject);
     this.topics = subject?.topics || [];
 
-    this.questionForm.patchValue(q);
+    const options = String(q.options || '').split('||').map(option => option.trim());
+    this.questionForm.patchValue({
+      ...q,
+      optionA: options[0] || '',
+      optionB: options[1] || '',
+      optionC: options[2] || '',
+      optionD: options[3] || '',
+    });
   }
 
 
   delete(id: number) {
     if (!confirm('Delete this question?')) return;
-    this.questionBankService.delete(id).subscribe(() => this.loadQuestions());
+    this.questionBankService.delete(id).subscribe(() => {
+      this.snackBar.open('Question deleted.', 'Dismiss', { duration: 2500 });
+      if (this.questions.length === 1 && this.page > 0) this.page--;
+      this.loadQuestions();
+    }, () => this.snackBar.open('Could not delete the question. Please try again.', 'Dismiss', { duration: 4000 }));
   }
 
   reset() {
     this.isEditMode = false;
     this.editingId = null;
     this.topics = [];
+    this.attemptedSubmit = false;
+    this.saving = false;
 
     this.questionForm.reset({
       difficulty: 'EASY',

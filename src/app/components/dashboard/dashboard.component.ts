@@ -1,141 +1,100 @@
-import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatDividerModule } from '@angular/material/divider';
-import { ApiService } from '../../services/api.service';
-import { ChartConfiguration } from 'chart.js';
+import { Router } from '@angular/router';
 import { BaseChartDirective } from 'ng2-charts';
-import { MatTabsModule } from '@angular/material/tabs';
-import { ViewChild } from '@angular/core';
+import { ChartConfiguration } from 'chart.js';
+import { ApiService } from '../../services/api.service';
+
+interface DashboardAttempt {
+  id: number;
+  examId: number;
+  examTitle: string;
+  totalScore: number;
+  correctCount: number;
+  wrongCount: number;
+  accuracy: number;
+  submittedAt: string;
+  subjects: Record<string, number>;
+}
+
+interface SubjectPerformance {
+  name: string;
+  correct: number;
+  total: number;
+  accuracy: number;
+}
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [
-    CommonModule,
-    MatCardModule,
-    MatButtonModule,
-    MatDividerModule,
-    MatTabsModule,
-    BaseChartDirective // ✅ required for <canvas baseChart>
-  ],
+  imports: [CommonModule, BaseChartDirective],
   templateUrl: './dashboard.component.html',
-  styleUrls: ['./dashboard.component.css']
+  styleUrls: ['./dashboard.component.css'],
 })
 export class DashboardComponent implements OnInit {
-
   @ViewChild(BaseChartDirective) chart?: BaseChartDirective;
 
   user: any = null;
   exams: any[] = [];
-  results: any[] = [];
+  publishedExams: any[] = [];
+  availableExams: any[] = [];
+  results: DashboardAttempt[] = [];
+  recentAttempts: DashboardAttempt[] = [];
+  subjectPerformance: SubjectPerformance[] = [];
+
+  loadingExams = true;
+  loadingResults = true;
+  loadingSubjects = false;
+  examLoadError = false;
+  resultLoadError = false;
 
   totalExams = 0;
   averageScore = 0;
+  averageScorePercent = 0;
   bestScore = 0;
-  recommendations: string[] = [];
+  bestScoreMax = 720;
 
-  selectedExamTab = 0; // 0 = Upcoming (default)
-
-  upcomingExams: any[] = [];
-  pastExams: any[] = [];
-
-  subjectFilters = [
-    { label: 'Total', visible: true },
-    { label: 'Physics', visible: true },
-    { label: 'Chemistry', visible: true },
-    { label: 'Biology', visible: true }
-  ];
-
-  // ---------- CHART CONFIG ----------
-  // lineChartData: ChartConfiguration<'line'>['data'] = {
-  //   labels: [],
-  //   datasets: [
-  //     {
-  //       data: [],
-  //       label: 'Performance Over Time',
-  //       fill: true,
-  //       tension: 0.4,
-  //       borderColor: '#3f51b5',
-  //       backgroundColor: 'rgba(63,81,181,0.15)',
-  //       pointBackgroundColor: '#3f51b5',
-  //       pointRadius: 4
-  //     }
-  //   ]
-  // };
-
-  lineChartData: ChartConfiguration<'line'>['data'] = {
+  readonly chartData: ChartConfiguration<'line'>['data'] = {
     labels: [],
     datasets: [
       {
-        label: 'Total',
+        label: 'Score',
         data: [],
-        borderColor: '#3f51b5',
-        backgroundColor: 'rgba(63,81,181,0.15)',
-        tension: 0.4,
-        fill: true
+        borderColor: '#4053b8',
+        backgroundColor: 'rgba(64, 83, 184, 0.12)',
+        pointBackgroundColor: '#4053b8',
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        tension: 0.3,
+        fill: true,
       },
-      {
-        label: 'Physics',
-        data: [],
-        borderColor: '#e53935',
-        backgroundColor: 'rgba(229,57,53,0.15)',
-        tension: 0.4
-      },
-      {
-        label: 'Chemistry',
-        data: [],
-        borderColor: '#fb8c00',
-        backgroundColor: 'rgba(251,140,0,0.15)',
-        tension: 0.4
-      },
-      {
-        label: 'Biology',
-        data: [],
-        borderColor: '#43a047',
-        backgroundColor: 'rgba(67,160,71,0.15)',
-        tension: 0.4
-      }
-    ]
+    ],
   };
 
-
-  // lineChartOptions: ChartConfiguration<'line'>['options'] = {
-  //   responsive: true,
-  //   plugins: {
-  //     legend: { display: false },
-  //     tooltip: {
-  //       enabled: true,
-  //       backgroundColor: '#3f51b5',
-  //       titleColor: '#fff',
-  //       bodyColor: '#fff'
-  //     }
-  //   },
-  //   scales: {
-  //     x: { grid: { display: false } },
-  //     y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } }
-  //   }
-  // };
-
-  lineChartOptions: ChartConfiguration<'line'>['options'] = {
+  readonly chartOptions: ChartConfiguration<'line'>['options'] = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
-      legend: {
-        display: true,
-        position: 'bottom'
-      },
+      legend: { display: false },
       tooltip: {
-        enabled: true
-      }
+        callbacks: {
+          label: (context) => ` ${context.parsed.y}% of available marks`,
+        },
+      },
     },
     scales: {
+      x: {
+        grid: { display: false },
+        ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 6 },
+      },
       y: {
         beginAtZero: true,
-        max: 720
-      }
-    }
+        min: 0,
+        max: 100,
+        ticks: { precision: 0, callback: (value) => `${value}%` },
+        title: { display: true, text: 'Score (%)' },
+      },
+    },
   };
 
   constructor(private api: ApiService, private router: Router) {}
@@ -149,180 +108,237 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
-    this.user = JSON.parse(userData);
+    try {
+      this.user = JSON.parse(userData);
+    } catch {
+      localStorage.removeItem('AYE_USER');
+      this.router.navigate(['/auth']);
+      return;
+    }
+
     this.fetchExams();
     this.fetchResults();
   }
 
-  // fetchExams() {
-  //   this.api.getExams().subscribe({
-  //     next: (res) => (this.exams = res),
-  //     error: (err) => {
-  //       console.error('Error fetching exams', err);
-  //       alert('Failed to load exams.');
-  //     }
-  //   });
-  // }
-
-  fetchExams() {
+  fetchExams(): void {
+    this.loadingExams = true;
     this.api.getExams().subscribe({
-      next: (res) => {
-        this.exams = res;
-        this.categorizeExams(); // 👈 NEW
+      next: (response) => {
+        this.exams = Array.isArray(response) ? response : [];
+        this.updateAvailableExams();
+        if (this.results.length) {
+          this.calculateStats();
+          this.updateChart();
+        }
+        this.loadingExams = false;
       },
-      error: (err) => {
-        console.error('Error fetching exams', err);
-        alert('Failed to load exams.');
-      }
+      error: () => {
+        this.examLoadError = true;
+        this.loadingExams = false;
+      },
     });
   }
 
-  categorizeExams() {
-    if (!this.exams.length) return;
+  fetchResults(): void {
+    const studentId = Number(this.user?.id);
+    if (!studentId) {
+      this.resultLoadError = true;
+      this.loadingResults = false;
+      return;
+    }
 
-    const attemptedExamIds = new Set(
-      this.results.map(r => r.examId)
-    );
+    this.loadingResults = true;
+    this.api.getResultsByStudent(studentId).subscribe({
+      next: (response) => {
+        const attempts = Array.isArray(response) ? response : [];
+        this.results = attempts
+          .map((result: any) => ({
+            id: Number(result.id),
+            examId: Number(result.examId),
+            examTitle: result.examTitle || 'Untitled exam',
+            totalScore: Number(result.totalScore) || 0,
+            correctCount: Number(result.correctCount) || 0,
+            wrongCount: Number(result.wrongCount) || 0,
+            accuracy: Number(result.accuracy) || 0,
+            submittedAt: result.submittedAt,
+            subjects: result.subjects || {},
+          }))
+          .sort((a, b) => this.timestamp(b.submittedAt) - this.timestamp(a.submittedAt));
 
-    this.upcomingExams = this.exams.filter(
-      exam => !attemptedExamIds.has(exam.id)
-    );
-
-    this.pastExams = this.exams.filter(
-      exam => attemptedExamIds.has(exam.id)
-    );
-  }
-
-
-  // fetchResults() {
-  //   const userId = this.user?.id;
-  //   if (!userId) return;
-
-  //   this.api.getResultsByStudent(userId).subscribe({
-  //     next: (res) => {
-  //       this.results = res.map((r: any) => ({
-  //         examTitle: r.examTitle || 'unknown title',
-  //         totalScore: r.totalScore,
-  //         submittedAt: new Date(r.submittedAt).toLocaleString()
-  //       }));
-
-  //       this.calculateStats();
-  //       this.updateChart();
-  //       this.generateRecommendations();
-  //     },
-  //     error: (err) => console.error('Error fetching results', err)
-  //   });
-  // }
-
-  fetchResults() {
-    const userId = this.user?.id;
-    if (!userId) return;
-
-    this.api.getResultsByStudent(userId).subscribe({
-      next: (res) => {
-        this.results = res.map((r: any) => ({
-          examId: r.examId,
-          examTitle: r.examTitle,
-          totalScore: r.totalScore,
-          physics: r.subjects?.physics ?? 0,
-          chemistry: r.subjects?.chemistry ?? 0,
-          biology: r.subjects?.biology ?? 0,
-          submittedAt: new Date(r.submittedAt).toLocaleString()
-        }));
-
+        this.totalExams = this.results.length;
+        this.recentAttempts = this.results.slice(0, 3);
         this.calculateStats();
         this.updateChart();
-        this.generateRecommendations();
-        this.categorizeExams();
+        this.updateAvailableExams();
+        this.loadingResults = false;
+
+        if (this.results.length > 0 && this.results[0].id) {
+          this.fetchLatestSubjectPerformance(this.results[0].id);
+        }
       },
-      error: (err) => console.error('Error fetching results', err)
+      error: () => {
+        this.resultLoadError = true;
+        this.loadingResults = false;
+      },
     });
   }
 
-  calculateStats() {
-    this.totalExams = this.results.length;
-    if (this.results.length > 0) {
-      const scores = this.results.map((r) => r.totalScore);
-      this.averageScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
-      this.bestScore = Math.max(...scores);
+  private calculateStats(): void {
+    if (!this.results.length) {
+      this.averageScore = 0;
+      this.averageScorePercent = 0;
+      this.bestScore = 0;
+      this.bestScoreMax = 720;
+      return;
     }
+
+    const percentages = this.results.map((attempt) => this.scorePercent(attempt));
+    this.averageScorePercent = Math.round(
+      percentages.reduce((sum, value) => sum + value, 0) / percentages.length,
+    );
+    this.averageScore = Math.round(
+      this.results.reduce((sum, attempt) => sum + attempt.totalScore, 0) / this.results.length,
+    );
+
+    const bestAttempt = this.results.reduce((best, attempt) =>
+      this.scorePercent(attempt) > this.scorePercent(best) ? attempt : best,
+    );
+    this.bestScore = bestAttempt.totalScore;
+    this.bestScoreMax = this.maxScoreFor(bestAttempt);
   }
 
-  // updateChart() {
-  //   this.lineChartData.labels = this.results.map((r) => r.examTitle);
-  //   this.lineChartData.datasets[0].data = this.results.map((r) => r.totalScore);
-  // }
-
-  updateChart() {
-    this.lineChartData.labels = this.results.map(r => r.examTitle);
-
-    this.lineChartData.datasets[0].data =
-      this.results.map(r => r.totalScore);
-
-    this.lineChartData.datasets[1].data =
-      this.results.map(r => r.physics);
-
-    this.lineChartData.datasets[2].data =
-      this.results.map(r => r.chemistry);
-
-    this.lineChartData.datasets[3].data =
-      this.results.map(r => r.biology);
-    
-    this.lineChartData.datasets.forEach((dataset: any) => {
-      const filter = this.subjectFilters.find(f => f.label === dataset.label);
-      dataset.hidden = filter ? !filter.visible : false;
+  private updateChart(): void {
+    const chronologicalAttempts = this.results.slice(0, 8).reverse();
+    this.chartData.labels = chronologicalAttempts.map((attempt, index) => {
+      const date = new Date(attempt.submittedAt);
+      const day = Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      return day ? `${index + 1} · ${day}` : `Attempt ${index + 1}`;
     });
-
+    this.chartData.datasets[0].data = chronologicalAttempts.map((attempt) => Math.round(this.scorePercent(attempt)));
     this.chart?.update();
   }
 
-  toggleDataset(label: string, event: Event) {
-  const checked = (event.target as HTMLInputElement).checked;
+  private fetchLatestSubjectPerformance(attemptId: number): void {
+    this.loadingSubjects = true;
+    this.api.getAttemptById(attemptId).subscribe({
+      next: (attempt) => {
+        const totals = new Map<string, { correct: number; total: number }>();
+        (attempt?.questions || []).forEach((question: any) => {
+          const name = question.subject || 'Other';
+          const current = totals.get(name) || { correct: 0, total: 0 };
+          current.total += 1;
+          if (question.isCorrect === true) current.correct += 1;
+          totals.set(name, current);
+        });
 
-  // 1️⃣ Update filter state
-  const filter = this.subjectFilters.find(f => f.label === label);
-    if (filter) {
-      filter.visible = checked;
-    }
-
-    // 2️⃣ Update dataset visibility
-    const dataset = this.lineChartData.datasets.find(
-      d => d.label === label
-    ) as any;
-
-    if (dataset) {
-      dataset.hidden = !checked;
-    }
-
-    // 3️⃣ Force chart redraw
-    this.chart?.update();
+        this.subjectPerformance = Array.from(totals.entries())
+          .map(([name, values]) => ({
+            name,
+            correct: values.correct,
+            total: values.total,
+            accuracy: values.total ? Math.round((values.correct / values.total) * 100) : 0,
+          }))
+          .sort((a, b) => a.accuracy - b.accuracy);
+        this.loadingSubjects = false;
+      },
+      error: () => {
+        this.subjectPerformance = [];
+        this.loadingSubjects = false;
+      },
+    });
   }
 
-  generateRecommendations() {
-    if (this.results.length === 0) return;
+  private updateAvailableExams(): void {
+    const attemptedExamIds = new Set(this.results.map((attempt) => attempt.examId));
+    this.publishedExams = this.exams.filter((exam) => {
+      const status = String(exam.status || '').toUpperCase();
+      if (status !== 'PUBLISH') return false;
 
-    const lastScore = this.results[this.results.length - 1].totalScore;
-    if (lastScore < 400) {
-      this.recommendations = [
-        'Focus on your weak subjects using practice tests.',
-        'Try NEET Mock Test Series 2 for improvement.'
-      ];
-    } else if (lastScore < 600) {
-      this.recommendations = ['You are improving! Try advanced-level mocks next.'];
-    } else {
-      this.recommendations = ['Excellent performance! Attempt more full-length mocks.'];
-    }
+      const now = Date.now();
+      const startsAt = exam.startTime ? new Date(exam.startTime).getTime() : null;
+      const endsAt = exam.endTime ? new Date(exam.endTime).getTime() : null;
+      return (startsAt === null || (!Number.isNaN(startsAt) && startsAt <= now))
+        && (endsAt === null || (!Number.isNaN(endsAt) && endsAt > now));
+    }).sort((a, b) => Number(b.id) - Number(a.id));
+    this.availableExams = this.publishedExams.filter((exam) => !attemptedExamIds.has(Number(exam.id)));
   }
 
-  startExam(exam: any) {
+  scorePercent(attempt: DashboardAttempt): number {
+    const maxScore = this.maxScoreFor(attempt);
+    return maxScore > 0 ? (attempt.totalScore / maxScore) * 100 : 0;
+  }
+
+  maxScoreFor(attempt: DashboardAttempt): number {
+    const matchingExam = this.exams.find((exam) => Number(exam.id) === attempt.examId);
+    return Number(matchingExam?.totalMarks) > 0 ? Number(matchingExam.totalMarks) : 720;
+  }
+
+  scoreLabel(attempt: DashboardAttempt): string {
+    return `${attempt.totalScore} / ${this.maxScoreFor(attempt)}`;
+  }
+
+  formattedDate(value: string): string {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? 'Date unavailable' : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  private timestamp(value: string): number {
+    const parsed = new Date(value).getTime();
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+
+  get recommendedExam(): any | null {
+    return this.availableExams[0] || this.publishedExams[0] || null;
+  }
+
+  get additionalExams(): any[] {
+    return this.publishedExams
+      .filter((exam) => Number(exam.id) !== Number(this.recommendedExam?.id));
+  }
+
+  hasAttemptedExam(examId: number): boolean {
+    return this.results.some((attempt) => attempt.examId === Number(examId));
+  }
+
+  get recommendedExamIsRetake(): boolean {
+    return this.recommendedExam ? this.hasAttemptedExam(this.recommendedExam.id) : false;
+  }
+
+  get weakestSubject(): SubjectPerformance | null {
+    return this.subjectPerformance[0] || null;
+  }
+
+  get recentBestTitle(): string {
+    const bestAttempt = this.results.reduce<DashboardAttempt | null>((best, attempt) => {
+      if (!best || this.scorePercent(attempt) > this.scorePercent(best)) return attempt;
+      return best;
+    }, null);
+    return bestAttempt?.examTitle || 'Your highest score';
+  }
+
+  startExam(exam: any): void {
     localStorage.setItem('SELECTED_EXAM', JSON.stringify(exam));
     this.router.navigate(['/exam']);
   }
 
-  logout() {
-    localStorage.removeItem('AYE_TOKEN');
-    localStorage.removeItem('AYE_USER');
-    localStorage.removeItem('SELECTED_EXAM');
-    this.router.navigate(['/auth']);
+  startPractice(): void {
+    this.router.navigate(['/prepare']);
+  }
+
+  openResults(): void {
+    this.router.navigate(['/results']);
+  }
+
+  openAnalysis(attempt: DashboardAttempt): void {
+    this.router.navigate(['/analysis', attempt.id]);
+  }
+
+  openLatestAnalysis(): void {
+    const latest = this.results[0];
+    if (latest) this.openAnalysis(latest);
+  }
+
+  openAiCoach(): void {
+    this.router.navigate(['/ai-chat']);
   }
 }
