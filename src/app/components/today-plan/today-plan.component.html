@@ -1,0 +1,69 @@
+<main class="today-plan-page">
+  <div class="today-plan-content">
+    <button type="button" class="back-button" (click)="backToDashboard()">← Dashboard</button>
+
+    <header class="plan-heading">
+      <p class="eyebrow">YOUR PERSONAL STUDY ROUTINE</p>
+      <h1>{{ plan?.title || 'Your plan for today' }}</h1>
+      <p>{{ plan?.introduction || 'A short, focused plan to help you keep moving forward.' }}</p>
+    </header>
+
+    <div class="plan-loading" role="status" *ngIf="loading">Building your plan from your history…</div>
+    <section class="error-card" role="alert" *ngIf="errorMessage">
+      <p>{{ errorMessage }}</p>
+      <button type="button" class="primary-button" (click)="loadPlan()">Try again</button>
+    </section>
+
+    <ng-container *ngIf="plan && !loading">
+      <section class="history-summary" aria-label="History used for this plan">
+        <div><strong>{{ plan.examAttempts }}</strong><span>exam attempts</span></div>
+        <div><strong>{{ plan.practiceAttempts }}</strong><span>practice sessions</span></div>
+        <div><strong>{{ plan.answeredQuestions }}</strong><span>answers reviewed</span></div>
+        <div><strong>~{{ estimatedMinutes }} min</strong><span>to complete today’s plan</span></div>
+      </section>
+
+      <section class="plan-layout">
+        <div class="tasks-panel">
+          <div class="section-heading">
+            <div><p class="eyebrow">SMALL STEPS, STEADY PROGRESS</p><h2>Today’s study plan</h2></div>
+            <span class="task-count">{{ plan.tasks.length }} steps</span>
+          </div>
+
+          <article class="task-card" *ngFor="let task of plan.tasks; let i = index">
+            <span class="task-number">{{ i + 1 }}</span>
+            <div class="task-copy">
+              <h3>{{ task.title }}</h3>
+              <p>{{ task.description }}</p>
+              <div class="task-meta"><span>{{ task.questionCount }} questions</span><span>{{ task.estimatedMinutes }} min</span><span *ngIf="task.subject">{{ task.subject }}</span></div>
+            </div>
+            <button type="button" class="primary-button" (click)="startTask(task)">
+              {{ task.actionType === 'TOPIC_PRACTICE' ? 'Practice topic' : 'Start practice' }} <span aria-hidden="true">→</span>
+            </button>
+          </article>
+
+          <div class="empty-note" *ngIf="!plan.tasks.length">No study steps are available yet. Start a practice test to get your plan going.</div>
+        </div>
+
+        <aside class="focus-panel">
+          <p class="eyebrow">BASED ON YOUR HISTORY</p>
+          <h2>{{ plan.hasHistory ? 'Topics to strengthen' : 'Your first step' }}</h2>
+          <p class="focus-intro" *ngIf="plan.hasHistory">These topics have the most room for improvement in your completed exams and practice.</p>
+          <div class="focus-item" *ngFor="let focus of plan.focusAreas">
+            <div class="focus-topline"><strong>{{ focus.topic }}</strong><span>{{ focus.accuracy }}%</span></div>
+            <small>{{ focus.subject }} · {{ focus.correct }} correct of {{ focus.answered }}</small>
+            <div class="accuracy-track" role="progressbar" [attr.aria-label]="focus.topic + ' accuracy'" [attr.aria-valuenow]="focus.accuracy" aria-valuemin="0" aria-valuemax="100">
+              <span [style.width.%]="focus.accuracy"></span>
+            </div>
+          </div>
+          <div class="first-step-note" *ngIf="!plan.hasHistory">
+            Your first practice set gives us a baseline. Future plans will use your answers to find topics to focus on.
+          </div>
+          <div class="first-step-note" *ngIf="plan.hasHistory && !plan.focusAreas.length">
+            Your history is saved, but we don’t have enough matching question-bank topics to recommend a specific focus yet. A mixed practice set will help build a useful baseline.
+          </div>
+          <p class="history-footnote" *ngIf="plan.hasHistory">The plan combines your saved exam and practice answers.</p>
+        </aside>
+      </section>
+    </ng-container>
+  </div>
+</main>

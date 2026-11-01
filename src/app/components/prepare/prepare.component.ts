@@ -6,7 +6,7 @@ import { PracticeRunnerComponent } from '../practice-runner/practice-runner.comp
 import { UiStateService } from '../../services/ui-state.service';
 import { QuestionBankService } from '../../services/question-bank.service';
 import { Subject, SubjectService } from '../../services/subject.service';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 type PrepareStep = 'CONFIG' | 'TEST' | 'RESULT';
 type PrepareMode = 'RANDOM' | 'DIFFICULTY';
@@ -46,6 +46,9 @@ export class PrepareComponent implements OnInit, OnDestroy {
   errorMessage = '';
   practiceSessionId: string | null = null;
   practiceSubmitError = '';
+  private plannedTopic: string | null = null;
+  private plannedSubject: string | null = null;
+  private plannedQuestionCount = 10;
 
   @ViewChild(PracticeRunnerComponent) practiceRunner?: PracticeRunnerComponent;
 
@@ -54,9 +57,16 @@ export class PrepareComponent implements OnInit, OnDestroy {
     private questionBankService: QuestionBankService,
     private subjectService: SubjectService,
     private router: Router,
+    private route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
+    this.plannedTopic = this.route.snapshot.queryParamMap.get('topic');
+    this.plannedSubject = this.route.snapshot.queryParamMap.get('subject');
+    const plannedCount = Number(this.route.snapshot.queryParamMap.get('questionCount'));
+    if (Number.isInteger(plannedCount) && plannedCount > 0 && plannedCount <= 180) {
+      this.plannedQuestionCount = plannedCount;
+    }
     try {
       const user = JSON.parse(localStorage.getItem('AYE_USER') || '{}');
       this.examTypeId = Number(user.examTypeId) || null;
@@ -92,6 +102,16 @@ export class PrepareComponent implements OnInit, OnDestroy {
           }
         }
         this.topicsLoading = false;
+        if (this.plannedTopic) {
+          const plannedMatch = this.topics.find(topic => topic.name === this.plannedTopic
+            && (!this.plannedSubject || topic.subject === this.plannedSubject));
+          if (plannedMatch) {
+            this.totalQuestions = this.plannedQuestionCount;
+            this.startTopicPractice(plannedMatch.name, plannedMatch.subject);
+          } else {
+            this.errorMessage = 'This recommended topic is no longer available. Choose a topic below to practice.';
+          }
+        }
       },
       error: () => {
         this.topics = [];
@@ -167,17 +187,17 @@ export class PrepareComponent implements OnInit, OnDestroy {
     this.loadPracticeQuestions();
   }
 
-  startTopicPractice(topicName: string): void {
+  startTopicPractice(topicName: string, subject?: string): void {
     if (this.loading) return;
     if (this.timeMode === 'TIMED' && !this.isTimeLimitValid) {
       this.errorMessage = 'Set a time limit between 1 and 600 minutes before starting practice.';
       return;
     }
     this.selectedTopic = topicName;
-    this.loadPracticeQuestions(topicName);
+    this.loadPracticeQuestions(topicName, subject);
   }
 
-  private loadPracticeQuestions(topic?: string): void {
+  private loadPracticeQuestions(topic?: string, subject?: string): void {
     this.loading = true;
     this.errorMessage = '';
 
@@ -193,6 +213,7 @@ export class PrepareComponent implements OnInit, OnDestroy {
       request.difficultySplit = { ...this.difficultySplit };
     }
     if (topic) request.topic = topic;
+    if (topic && subject) request.subject = subject;
 
     this.questionBankService.getPracticeQuestions(request).subscribe({
       next: (response) => {

@@ -26,10 +26,11 @@
           <button type="button" class="button next-exam-button" (click)="startPractice()">Create a practice test</button>
         </ng-template>
       </div>
-      <div class="next-exam-aside" *ngIf="recommendedExam">
-        <span class="availability-chip">{{ recommendedExamIsRetake ? 'Ready for another attempt' : 'Available to start' }}</span>
-        <strong>{{ recommendedExamIsRetake ? 'Practice makes progress' : 'Keep your momentum going' }}</strong>
-        <span class="aside-copy">Your recent attempts and analysis are below.</span>
+      <div class="next-exam-aside">
+        <span class="availability-chip">Personalized for you</span>
+        <strong>Your plan for today</strong>
+        <span class="aside-copy">A short study routine based on your exam and practice history.</span>
+        <button type="button" class="button plan-button" (click)="openTodayPlan()">View today’s plan <span aria-hidden="true">→</span></button>
       </div>
     </section>
 

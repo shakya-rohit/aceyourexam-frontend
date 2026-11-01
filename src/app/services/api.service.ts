@@ -87,6 +87,12 @@ export class ApiService {
     });
   }
 
+  getTodayStudyPlan(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/student/study-plan/today`, {
+      headers: this.getAuthHeaders()
+    });
+  }
+
   private getAuthHeaders(): HttpHeaders {
     const token = localStorage.getItem('AYE_TOKEN');
     return new HttpHeaders({

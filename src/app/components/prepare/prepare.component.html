@@ -83,7 +83,7 @@
               </button>
             </div>
             <div class="topic-grid">
-              <button class="topic-card" type="button" *ngFor="let topic of visibleTopics" [disabled]="loading" (click)="startTopicPractice(topic.name)">
+              <button class="topic-card" type="button" *ngFor="let topic of visibleTopics" [disabled]="loading" (click)="startTopicPractice(topic.name, topic.subject)">
                 <span class="topic-icon" aria-hidden="true">{{ topic.icon }}</span>
                 <span class="topic-copy"><strong>{{ topic.name }}</strong><small>{{ topic.subject }} · 10 questions</small></span>
                 <span class="topic-arrow" aria-hidden="true">→</span>

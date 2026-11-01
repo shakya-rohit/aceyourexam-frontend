@@ -21,6 +21,12 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'today-plan',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./components/today-plan/today-plan.component').then((m) => m.TodayPlanComponent),
+  },
+  {
     path: 'exam',
     canActivate: [authGuard],
     loadComponent: () =>

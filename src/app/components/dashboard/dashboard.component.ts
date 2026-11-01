@@ -325,6 +325,10 @@ export class DashboardComponent implements OnInit {
     this.router.navigate(['/prepare']);
   }
 
+  openTodayPlan(): void {
+    this.router.navigate(['/today-plan']);
+  }
+
   openResults(): void {
     this.router.navigate(['/results']);
   }
