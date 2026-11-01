@@ -546,6 +546,26 @@ h2 {
   font-size: 13px;
 }
 
+.retry-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #8d211d;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.retry-link:focus-visible { outline: 2px solid #8d211d; outline-offset: 2px; }
+
+@media (max-width: 900px) {
+  .dashboard-page { padding: 24px 18px 40px; }
+  .progress-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .metric-card:last-child { grid-column: 1 / -1; }
+  .next-exam { grid-template-columns: minmax(0, 1fr) minmax(210px, .8fr); }
+}
+
 @media (max-width: 900px) {
   .dashboard-grid,
   .lower-grid {
@@ -573,10 +593,14 @@ h2 {
 
   .welcome-actions {
     width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .welcome-actions .button {
-    flex: 1;
+    min-width: 0;
+    padding-inline: 9px;
+    font-size: 13px;
   }
 
   h1 {
@@ -605,6 +629,8 @@ h2 {
     padding: 12px 15px;
   }
 
+  .metric-card:last-child { grid-column: auto; }
+
   .metric-card > strong {
     font-size: 22px;
   }
@@ -615,11 +641,15 @@ h2 {
 
   .panel-heading {
     align-items: flex-start;
+    flex-wrap: wrap;
   }
 
   .chart-area {
     height: 235px;
   }
+
+  .available-list { grid-template-columns: minmax(0, 1fr); }
+  .next-exam h2 { overflow-wrap: anywhere; font-size: 21px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

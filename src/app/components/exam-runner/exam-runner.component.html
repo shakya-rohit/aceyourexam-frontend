@@ -1,10 +1,18 @@
+<main class="runner-state" *ngIf="loadingQuestions" role="status" aria-live="polite">
+    <div class="state-card"><span class="state-spinner" aria-hidden="true"></span><h1>Loading your exam</h1><p>Getting your questions ready. Keep this page open.</p></div>
+</main>
+
+<main class="runner-state" *ngIf="!loadingQuestions && questionLoadError" role="alert">
+    <div class="state-card"><span class="state-icon" aria-hidden="true">!</span><h1>Exam unavailable</h1><p>{{ questionLoadError }}</p><button type="button" class="submit-btn retry-btn" (click)="retryLoadQuestions()">Try again</button></div>
+</main>
+
 <div class="runner-container" *ngIf="exam && currentQuestion">
 
     <!-- TOP BAR -->
     <div class="runner-header">
         <div class="header-left">
             <!-- <span class="brand">AceYourExam</span> -->
-            <span class="exam-name">{{ exam.title }}</span>
+            <span class="exam-name" [title]="exam.title">{{ exam.title }}</span>
         </div>
 
         <div class="header-center">
@@ -17,6 +25,8 @@
             </button>
         </div>
     </div>
+
+    <p class="submit-error" role="alert" *ngIf="submitError">{{ submitError }}</p>
 
     <!-- BODY -->
     <div class="runner-body">
@@ -38,7 +48,7 @@
                     <span class="marks">+{{ currentQuestion.marks }} / −1</span>
                 </div>
 
-                <div class="question-text">
+                <div class="question-text" tabindex="0">
                     {{ currentQuestion.text }}
                 </div>
 

@@ -40,6 +40,9 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
   questionStartTime = 0;
   isSubmitting = false;
   hasSubmitted = false;
+  loadingQuestions = true;
+  questionLoadError = '';
+  submitError = '';
 
   constructor(
     private api: ApiService,
@@ -53,7 +56,13 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.exam = JSON.parse(examData);
+    try {
+      this.exam = JSON.parse(examData);
+    } catch {
+      localStorage.removeItem('SELECTED_EXAM');
+      this.router.navigate(['/dashboard']);
+      return;
+    }
     this.loadQuestions();
   }
 
@@ -81,8 +90,11 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
   /* ---------------- QUESTIONS ---------------- */
 
   loadQuestions() {
+    this.loadingQuestions = true;
+    this.questionLoadError = '';
     this.api.getQuestionsForAttempt(this.exam.id).subscribe({
       next: res => {
+        this.loadingQuestions = false;
         // Reset data (important if component reloads)
         this.questions = [];
         this.sections = [];
@@ -116,15 +128,22 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
 
         this.questionStartTime = Date.now();
         if (!this.questions.length) {
-          alert('This exam does not have any questions yet.');
+          this.questionLoadError = 'This exam does not have any questions yet. Please contact the exam administrator.';
           return;
         }
         this.timeLeft = Math.max(1, Number(this.exam.durationMinutes) || 1) * 60;
         this.formattedTime = this.formatTime(this.timeLeft);
         this.startTimer();
       },
-      error: () => alert('Failed to load questions')
+      error: () => {
+        this.loadingQuestions = false;
+        this.questionLoadError = 'We couldn’t load the exam questions. Check your connection and try again.';
+      }
     });
+  }
+
+  retryLoadQuestions(): void {
+    this.loadQuestions();
   }
 
 
@@ -185,6 +204,7 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
 
     this.recordTime();
     this.isSubmitting = true;
+    this.submitError = '';
     this.timerSub?.unsubscribe();
 
     const payload = {
@@ -204,7 +224,7 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
       },
       error: () => {
         this.isSubmitting = false;
-        alert('Submit failed. Please try again.');
+        this.submitError = 'Your answers could not be submitted. Your selections are still on this page; please try again.';
       }
     });
   }

@@ -122,6 +122,7 @@ export class DashboardComponent implements OnInit {
 
   fetchExams(): void {
     this.loadingExams = true;
+    this.examLoadError = false;
     this.api.getExams().subscribe({
       next: (response) => {
         this.exams = Array.isArray(response) ? response : [];
@@ -148,6 +149,7 @@ export class DashboardComponent implements OnInit {
     }
 
     this.loadingResults = true;
+    this.resultLoadError = false;
     this.api.getResultsByStudent(studentId).subscribe({
       next: (response) => {
         const attempts = Array.isArray(response) ? response : [];
