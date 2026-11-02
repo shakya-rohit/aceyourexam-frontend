@@ -41,6 +41,9 @@ export class CompleteProfileComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // The exam-types service is shared with other screens; force a fresh
+    // request for onboarding rather than reusing a stale in-memory result.
+    this.service.clearCache();
     this.fetchExamTypes();
   }
 

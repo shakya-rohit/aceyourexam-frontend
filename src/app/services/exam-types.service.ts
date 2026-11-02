@@ -21,25 +21,24 @@ export class ExamTypesService {
 
   constructor(private http: HttpClient) {}
 
-  private getAuthHeaders(): HttpHeaders {
-          const token = localStorage.getItem('AYE_TOKEN');
-          return new HttpHeaders({
-              Authorization: `Bearer ${token}`
-          });
-      }
-
   fetchExamTypes(): Observable<ExamType[]> {
-    // cache only when topics are included (most useful case)
     if (this.examTypesCache) {
       return of(this.examTypesCache);
     }
 
+    const token = localStorage.getItem('AYE_TOKEN');
+    const headers = token
+      ? new HttpHeaders({ Authorization: `Bearer ${token}` })
+      : new HttpHeaders();
+
     return this.http.get<ExamType[]>(`${this.baseUrl}/exam-types`, {
-            headers: this.getAuthHeaders()
-        })
+      headers
+    })
       .pipe(
         tap(res => {
+          if (Array.isArray(res) && res.length > 0) {
             this.examTypesCache = res;
+          }
         })
       );
   }
