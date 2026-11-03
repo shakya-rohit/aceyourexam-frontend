@@ -274,6 +274,7 @@ export class PrepareComponent implements OnInit, OnDestroy {
             selectedOptionIndex: selected,
             correctOptionIndex: Number(answer?.correctAnswer),
             isCorrect: answer?.correct === true,
+            explanation: answer?.explanation || question.explanation || null,
           };
         });
         this.practiceSessionId = null;

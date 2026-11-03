@@ -113,6 +113,9 @@
             <span>Correct answer: <strong>{{ optionLabel(question, question.correctOptionIndex) }}</strong></span>
             <span>{{ question.timeSpent ? (question.timeSpent + ' sec') : 'Time not recorded' }}</span>
           </div>
+          <p class="question-explanation" *ngIf="question.explanation && !question.isCorrect">
+            <strong>Explanation:</strong> {{ question.explanation }}
+          </p>
         </div>
         <span class="question-status" [ngClass]="isSkipped(question) ? 'status-skipped' : question.isCorrect ? 'status-correct' : 'status-incorrect'">
           {{ isSkipped(question) ? '↗ Skipped' : question.isCorrect ? '✓ Correct' : '✕ Incorrect' }}

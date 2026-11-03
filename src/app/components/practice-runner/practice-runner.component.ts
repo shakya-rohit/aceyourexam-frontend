@@ -142,6 +142,7 @@ export class PracticeRunnerComponent implements OnInit, OnDestroy {
     }).subscribe({
       next: (result) => {
         question.correctOptionIndex = result.correctOptionIndex;
+        question.explanation = result.explanation;
         question.isCorrect = result.isCorrect;
         question.answered = true;
         question.answerPending = false;

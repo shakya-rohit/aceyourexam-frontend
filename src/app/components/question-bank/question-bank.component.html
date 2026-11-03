@@ -105,6 +105,16 @@
 
         </div>
 
+        <div class="form-section">
+          <h4>Answer explanation <span class="optional-label">(optional)</span></h4>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Explain why the correct answer is right</mat-label>
+            <textarea matInput rows="4" formControlName="explanation"
+              placeholder="Add a clear explanation students can review after answering."></textarea>
+            <mat-hint>Shown to students during practice feedback or after they submit an exam.</mat-hint>
+          </mat-form-field>
+        </div>
+
         <!-- Actions -->
         <div class="action-row">
           <button mat-raised-button color="primary" type="button" (click)="submit()" [disabled]="saving">

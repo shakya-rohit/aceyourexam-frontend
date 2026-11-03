@@ -85,7 +85,7 @@ export class QuestionBankService {
     }
 
     submitPracticeAnswer(requestBody: { sessionId: string; questionId: number; selectedOptionIndex: number }) {
-        return this.http.post<{ questionId: number; correctOptionIndex: number; isCorrect: boolean }>(
+        return this.http.post<{ questionId: number; correctOptionIndex: number; isCorrect: boolean; explanation: string | null }>(
             `${this.baseUrl}/prepare/answer`, requestBody, { headers: this.getAuthHeaders() }
         );
     }

@@ -650,3 +650,12 @@ h3 {
   }
 }
 
+.answer-review .explanation {
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  border-left: 3px solid #4053b8;
+  border-radius: 0 8px 8px 0;
+  background: #f4f6ff;
+  color: #465168;
+  line-height: 1.55;
+}

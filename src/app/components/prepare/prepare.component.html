@@ -121,6 +121,9 @@
                 <small *ngIf="i === question.selectedOptionIndex && !question.isCorrect">Your answer</small>
               </div>
             </div>
+            <div class="explanation" *ngIf="question.explanation && !question.isCorrect">
+              <strong>Explanation:</strong> {{ question.explanation }}
+            </div>
           </article>
         </details>
 

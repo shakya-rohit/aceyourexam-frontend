@@ -115,6 +115,7 @@ export class QuestionBankComponent implements OnInit, OnDestroy {
       optionC: [''],
       optionD: [''],
       correctOptionIndex: [0, Validators.required],
+      explanation: [''],
       difficulty: ['EASY', Validators.required],
       marks: [1, Validators.required],
       subject: ['', Validators.required],
@@ -191,6 +192,7 @@ export class QuestionBankComponent implements OnInit, OnDestroy {
       text: formValue.text,
       options: options.join(' || '),
       correctOptionIndex: Number(formValue.correctOptionIndex),
+      explanation: String(formValue.explanation || '').trim() || null,
       difficulty: formValue.difficulty,
       marks: Number(formValue.marks),
       subject: formValue.subject,
@@ -268,7 +270,8 @@ export class QuestionBankComponent implements OnInit, OnDestroy {
     this.questionForm.reset({
       difficulty: 'EASY',
       marks: 1,
-      correctOptionIndex: 0
+      correctOptionIndex: 0,
+      explanation: ''
     });
   }
 
