@@ -111,6 +111,7 @@
           <div class="answer-details">
             <span>Your answer: <strong>{{ optionLabel(question, question.selectedOptionIndex) }}</strong></span>
             <span>Correct answer: <strong>{{ optionLabel(question, question.correctOptionIndex) }}</strong></span>
+            <span>Scoring: <strong>+{{ question.marks }} / −{{ question.negativeMarks }}</strong></span>
             <span>{{ question.timeSpent ? (question.timeSpent + ' sec') : 'Time not recorded' }}</span>
           </div>
           <p class="question-explanation" *ngIf="question.explanation && !question.isCorrect">

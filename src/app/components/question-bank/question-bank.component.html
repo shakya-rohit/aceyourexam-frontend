@@ -77,6 +77,12 @@
               <mat-label>Marks</mat-label>
               <input matInput type="number" min="1" step="1" formControlName="marks">
             </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Negative marks</mat-label>
+              <input matInput type="number" min="0" step="1" formControlName="negativeMarks">
+              <mat-hint>Deducted for an incorrect answer.</mat-hint>
+            </mat-form-field>
           </div>
 
           <div class="form-grid">

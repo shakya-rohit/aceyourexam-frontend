@@ -16,7 +16,7 @@
       </nav>
 
       <section class="question-box" aria-live="polite">
-        <div class="question-meta"><span>Question {{ currentIndex + 1 }} of {{ questions.length }}</span><span class="marks">+{{ currentQuestion.marks || 1 }} marks</span></div>
+        <div class="question-meta"><span>Question {{ currentIndex + 1 }} of {{ questions.length }}</span><span class="marks">+{{ currentQuestion.marks }} / −{{ currentQuestion.negativeMarks }}</span></div>
         <div class="question-text">{{ currentQuestion.text }}</div>
 
         <div class="options">

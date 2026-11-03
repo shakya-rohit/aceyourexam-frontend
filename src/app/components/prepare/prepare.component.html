@@ -114,6 +114,7 @@
           <article class="review-question" *ngFor="let question of reviewQuestions">
             <div class="review-question-heading"><strong>Question {{ question.questionNumber }}</strong><span [class.review-status-correct]="question.isCorrect" [class.review-status-wrong]="!question.isCorrect">{{ question.isCorrect ? 'Correct' : (question.selectedOptionIndex === null ? 'Skipped' : 'Review') }}</span></div>
             <p class="review-question-text">{{ question.text }}</p>
+            <p class="review-question-scoring">Scoring: +{{ question.marks }} / −{{ question.negativeMarks }}</p>
             <div class="review-options">
               <div class="review-option" *ngFor="let option of (question.optionList || question.options); let i = index" [ngClass]="optionReviewClass(question, i)">
                 <span class="option-letter">{{ ['A', 'B', 'C', 'D', 'E'][i] || (i + 1) }}</span><span>{{ option }}</span>
