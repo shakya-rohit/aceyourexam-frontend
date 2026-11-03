@@ -27,6 +27,7 @@
     </div>
 
     <p class="submit-error" role="alert" *ngIf="submitError">{{ submitError }}</p>
+    <p class="submit-error" aria-live="polite" *ngIf="saveStatus">{{ saveStatus }}</p>
 
     <!-- BODY -->
     <div class="runner-body">

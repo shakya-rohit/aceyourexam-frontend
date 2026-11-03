@@ -2,3 +2,25 @@
 
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+.confirm-action-dialog-panel .mat-mdc-dialog-surface {
+  overflow: hidden;
+  border-radius: 16px;
+}
+
+.confirm-action-dialog-panel .confirm-delete-button {
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.confirm-action-dialog-panel .confirm-delete-button:hover:not(:disabled) {
+  --mdc-outlined-button-label-text-color: #fff;
+  background-color: #cf222e !important;
+  border-color: #cf222e !important;
+  color: #fff !important;
+  box-shadow: 0 2px 4px rgba(31, 35, 40, 0.18);
+}
+
+.confirm-action-dialog-panel .confirm-delete-button:focus-visible {
+  outline: 3px solid rgba(198, 40, 40, 0.3);
+  outline-offset: 2px;
+}

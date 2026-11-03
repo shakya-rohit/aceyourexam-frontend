@@ -15,8 +15,10 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { FormsModule } from '@angular/forms';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
 
 import { ApiService } from '../../services/api.service';
+import { ConfirmActionDialogComponent } from '../../shared/confirm-action-dialog.component';
 
 @Component({
   selector: 'app-exams-list',
@@ -45,6 +47,7 @@ export class ExamsListComponent implements OnInit {
   exams: any[] = [];
   loading = true;
   errorMessage = '';
+  deleteErrorMessage = '';
   searchText = '';
   selectedExamType = '';
   selectedStatus = '';
@@ -77,7 +80,8 @@ export class ExamsListComponent implements OnInit {
 
   constructor(
     private service: ApiService,
-    private router: Router
+    private router: Router,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -116,16 +120,35 @@ export class ExamsListComponent implements OnInit {
   }
 
   deleteExam(examId: number | string) {
-    this.loading=true;
+    const exam = this.exams.find(item => String(item.id) === String(examId));
+    const dialogRef = this.dialog.open(ConfirmActionDialogComponent, {
+      width: '480px',
+      maxWidth: 'calc(100vw - 32px)',
+      panelClass: 'confirm-action-dialog-panel',
+      data: {
+        title: 'Delete exam?',
+        messages: [`Are you sure you want to delete ${exam?.title || 'this exam'}?`, 'This action can’t be undone.'],
+        confirmLabel: 'Delete'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(confirmed => {
+      if (confirmed) this.confirmDeleteExam(examId);
+    });
+  }
+
+  private confirmDeleteExam(examId: number | string): void {
+
+    this.deleteErrorMessage = '';
     this.service.deleteExam(examId).subscribe({
       next: () => {
         this.exams = this.exams.filter(exam => String(exam.id) !== String(examId));
         if (this.pageIndex * this.pageSize >= this.filteredExams.length && this.pageIndex > 0) this.pageIndex--;
-        this.loading = false;
       },
-      error: () => {
-        this.loading = false;
-        this.errorMessage = 'Could not delete the exam. Please try again.';
+      error: (error) => {
+        this.deleteErrorMessage = error?.error?.message
+          || error?.error?.error
+          || 'Could not delete the exam. Please try again.';
       }
     });
   }

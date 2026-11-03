@@ -8,9 +8,10 @@ import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angula
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatDialog, MatDialogModule, MatDialogActions } from '@angular/material/dialog';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ApiService } from '../../services/api.service';
 import { Router } from '@angular/router';
+import { ConfirmActionDialogComponent } from '../../shared/confirm-action-dialog.component';
 
 @Component({
   selector: 'app-profile-settings',
@@ -199,16 +200,23 @@ export class ProfileComponent implements OnInit {
   }
 
   removeAvatar() {
-    if (!confirm('Remove avatar?')) return;
-    this.api.deleteAvatar().subscribe({
-      next: () => { this.user.avatarUrl = null; this.avatarPreview = null; this.snack.open('Avatar removed', 'OK', { duration: 2000 }); },
-      error: (err) => { console.error(err); this.snack.open('Could not remove avatar. Please try again.', 'OK', { duration: 3000 }); }
+    this.dialog.open(ConfirmActionDialogComponent, {
+      width: '480px', maxWidth: 'calc(100vw - 32px)', panelClass: 'confirm-action-dialog-panel',
+      data: { title: 'Remove profile photo?', messages: ['Are you sure you want to remove your profile photo?'], confirmLabel: 'Remove' }
+    }).afterClosed().subscribe(confirmed => {
+      if (!confirmed) return;
+      this.api.deleteAvatar().subscribe({
+        next: () => { this.user.avatarUrl = null; this.avatarPreview = null; this.snack.open('Avatar removed', 'OK', { duration: 2000 }); },
+        error: (err) => { console.error(err); this.snack.open('Could not remove avatar. Please try again.', 'OK', { duration: 3000 }); }
+      });
     });
   }
 
   openChangePassword() {
     // keep your dialog implementation or existing dialog component
-    const ref = this.dialog.open(ChangePasswordDialog, { width: '420px' });
+    const ref = this.dialog.open(ChangePasswordDialog, {
+      width: '480px', maxWidth: 'calc(100vw - 32px)', panelClass: 'confirm-action-dialog-panel'
+    });
     ref.afterClosed().subscribe(result => {
       if (result?.success){
         this.snack.open('Password changed', 'OK', { duration: 2000 });
@@ -223,10 +231,15 @@ export class ProfileComponent implements OnInit {
   }
 
   confirmDelete() {
-    if (!confirm('Delete account? This cannot be undone.')) return;
-    this.api.deleteAccount().subscribe({
-      next: () => { this.snack.open('Account deleted', 'OK', { duration: 2000 }); this.api.logout(); this.router.navigate(['/login']); },
-      error: (e) => { console.error(e); this.snack.open('Failed to delete', 'OK', { duration: 3000 }); }
+    this.dialog.open(ConfirmActionDialogComponent, {
+      width: '480px', maxWidth: 'calc(100vw - 32px)', panelClass: 'confirm-action-dialog-panel',
+      data: { title: 'Delete account?', messages: ['This will permanently delete your account and its associated profile.', 'This action can’t be undone.'], confirmLabel: 'Delete account' }
+    }).afterClosed().subscribe(confirmed => {
+      if (!confirmed) return;
+      this.api.deleteAccount().subscribe({
+        next: () => { this.snack.open('Account deleted', 'OK', { duration: 2000 }); this.api.logout(); this.router.navigate(['/login']); },
+        error: (e) => { console.error(e); this.snack.open('Failed to delete', 'OK', { duration: 3000 }); }
+      });
     });
   }
 }
@@ -239,34 +252,76 @@ import { Component as C2 } from '@angular/core';
 @C2({
   selector: 'change-password-dialog',
   standalone: true,
-  imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule, MatSnackBarModule, MatDialogActions],
+  imports: [CommonModule, ReactiveFormsModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule],
   template: `
-    <h2 mat-dialog-title>Change Password</h2>
-    <mat-dialog-content [formGroup]="form" class="dialog-content">
-      <mat-form-field appearance="fill" class="full">
-        <mat-label>Current Password</mat-label>
-        <input matInput type="password" formControlName="current" />
+    <div class="password-dialog-header">
+      <div>
+        <h2 mat-dialog-title>Change password</h2>
+        <p>Choose a new password to keep your account secure.</p>
+      </div>
+      <button mat-icon-button type="button" aria-label="Close change password dialog" (click)="close()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+    <mat-dialog-content [formGroup]="form" class="password-dialog-content">
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>Current password</mat-label>
+        <input matInput [type]="showCurrent ? 'text' : 'password'" formControlName="current" autocomplete="current-password" />
+        <button mat-icon-button matSuffix type="button" (click)="showCurrent = !showCurrent" [attr.aria-label]="showCurrent ? 'Hide current password' : 'Show current password'">
+          <mat-icon>{{ showCurrent ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        <mat-error *ngIf="form.controls.current.hasError('required')">Enter your current password.</mat-error>
       </mat-form-field>
-      <mat-form-field appearance="fill" class="full">
-        <mat-label>New Password</mat-label>
-        <input matInput type="password" formControlName="newp" />
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>New password</mat-label>
+        <input matInput [type]="showNew ? 'text' : 'password'" formControlName="newp" autocomplete="new-password" />
+        <button mat-icon-button matSuffix type="button" (click)="showNew = !showNew" [attr.aria-label]="showNew ? 'Hide new password' : 'Show new password'">
+          <mat-icon>{{ showNew ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        <mat-hint>At least 6 characters</mat-hint>
+        <mat-error *ngIf="form.controls.newp.hasError('required')">Enter a new password.</mat-error>
+        <mat-error *ngIf="form.controls.newp.hasError('minlength')">Use at least 6 characters.</mat-error>
       </mat-form-field>
-      <mat-form-field appearance="fill" class="full">
-        <mat-label>Confirm New</mat-label>
-        <input matInput type="password" formControlName="confirm" />
+      <mat-form-field appearance="outline" class="full">
+        <mat-label>Confirm new password</mat-label>
+        <input matInput [type]="showConfirm ? 'text' : 'password'" formControlName="confirm" autocomplete="new-password" />
+        <button mat-icon-button matSuffix type="button" (click)="showConfirm = !showConfirm" [attr.aria-label]="showConfirm ? 'Hide confirmation password' : 'Show confirmation password'">
+          <mat-icon>{{ showConfirm ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        <mat-error *ngIf="form.controls.confirm.hasError('required')">Confirm your new password.</mat-error>
       </mat-form-field>
+      <p class="password-error" role="alert" *ngIf="errorMessage">{{ errorMessage }}</p>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
-      <button mat-button (click)="close()">Cancel</button>
-      <button mat-raised-button color="primary" (click)="submit()" [disabled]="form.invalid">Change</button>
+      <button mat-stroked-button type="button" (click)="close()" [disabled]="isSubmitting">Cancel</button>
+      <button mat-flat-button color="primary" type="button" (click)="submit()" [disabled]="form.invalid || isSubmitting">
+        {{ isSubmitting ? 'Updating…' : 'Update password' }}
+      </button>
     </mat-dialog-actions>
   `,
-  styles: [`.full{width:100%;} .dialog-content{min-width:320px}`]
+  styles: [`
+    :host { display: block; color: #20263a; }
+    .password-dialog-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 22px 24px 18px; border-bottom: 1px solid #e3e7ed; }
+    h2[mat-dialog-title] { margin: 0 !important; padding: 0; font-size: 20px; font-weight: 650; line-height: 1.35; }
+    .password-dialog-header p { margin: 6px 0 0; color: #70778a; font-size: 13px; line-height: 1.45; }
+    .password-dialog-header button { margin: -7px -8px 0 0; color: #667085; }
+    .password-dialog-content { display: flex; flex-direction: column; gap: 8px; min-width: 360px; padding: 22px 24px 8px; }
+    .full { width: 100%; }
+    mat-form-field { font-size: 14px; }
+    mat-dialog-actions { gap: 8px; padding: 8px 24px 22px; }
+    mat-dialog-actions button { min-height: 40px; border-radius: 7px; }
+    .password-error { margin: 0 0 8px; color: #b42318; font-size: 13px; }
+    @media (max-width: 480px) { .password-dialog-content { min-width: 0; } }
+  `]
 })
 export class ChangePasswordDialog {
   private api = inject(ApiService);
-  private snack = inject(MatSnackBar);
   private dialogRef = inject(MatDialogRef<ChangePasswordDialog>);
+  showCurrent = false;
+  showNew = false;
+  showConfirm = false;
+  isSubmitting = false;
+  errorMessage = '';
 
   form = new FormGroup({
     current: new FormControl('', [Validators.required]),
@@ -277,17 +332,23 @@ export class ChangePasswordDialog {
   submit() {
     if (this.form.invalid) return;
     if (this.form.value.newp !== this.form.value.confirm) {
-      this.snack.open('Passwords do not match', 'OK', { duration: 2000 });
+      this.errorMessage = 'The new password and confirmation do not match.';
       return;
     }
 
+    this.isSubmitting = true;
+    this.errorMessage = '';
     const payload = {
       currentPassword: this.form.value.current || '',
       newPassword: this.form.value.newp || ''
     };
     this.api.changePassword(payload).subscribe({
       next: () => { this.dialogRef.close({ success: true }); },
-      error: (e) => { console.error(e); this.snack.open('Change failed', 'OK', { duration: 3000 }); }
+      error: (e) => {
+        console.error(e);
+        this.isSubmitting = false;
+        this.errorMessage = e?.error?.message || 'Could not update your password. Check your current password and try again.';
+      }
     });
   }
 

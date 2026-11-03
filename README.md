@@ -311,7 +311,8 @@ Full exam experience including:
 - Subject navigation (Physics / Chemistry / Biology)
 - Question palette
 - Mark for review
-- Auto-save answers
+- Server-side auto-save and recovery of answers after refresh or reconnect
+- Server-authoritative attempt timer with a configurable 5-minute submission grace period
 - Auto-submit on timeout
 
 Supports large exams such as **180-question NEET simulations**.

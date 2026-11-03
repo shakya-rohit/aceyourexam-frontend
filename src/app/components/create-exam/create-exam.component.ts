@@ -19,6 +19,7 @@ import { MatStepper, MatStepperModule } from '@angular/material/stepper';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDialog } from '@angular/material/dialog';
 import { FormsModule } from '@angular/forms';
 
 import { ApiService } from '../../services/api.service';
@@ -28,6 +29,7 @@ import { QuestionBankService } from '../../services/question-bank.service';
 import { ExamTypesService } from '../../services/exam-types.service';
 import { Subject, SubjectService, Topic } from '../../services/subject.service';
 import { Subject as RxSubject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
+import { ConfirmActionDialogComponent } from '../../shared/confirm-action-dialog.component';
 
 @Component({
   selector: 'app-create-exam',
@@ -270,17 +272,21 @@ export class CreateExamComponent implements OnInit, OnDestroy {
   removeQuestion(questionId: number) {
     if (this.isPublished || !this.examId) return;
 
-    this.service
-      .removeQuestionFromExam(this.examId, questionId)
-      .subscribe({
-        next: () => {
-          // refresh selected questions from backend
-          this.loadSelectedQuestions();
-        },
-        error: () => {
-          this.showError('Could not remove the question. Please try again.');
-        }
+    const question = this.selectedQuestions.find(item => Number(item.id) === Number(questionId));
+    this.dialog.open(ConfirmActionDialogComponent, {
+      width: '480px', maxWidth: 'calc(100vw - 32px)', panelClass: 'confirm-action-dialog-panel',
+      data: {
+        title: 'Remove question from exam?',
+        messages: [question?.text ? `Remove “${question.text}” from this exam?` : 'Remove this question from the exam?', 'The question will remain in your question bank.'],
+        confirmLabel: 'Remove'
+      }
+    }).afterClosed().subscribe(confirmed => {
+      if (!confirmed) return;
+      this.service.removeQuestionFromExam(this.examId!, questionId).subscribe({
+        next: () => this.loadSelectedQuestions(),
+        error: () => this.showError('Could not remove the question. Please try again.')
       });
+    });
   }
 
   questionBank: any[] = [];
@@ -388,7 +394,8 @@ export class CreateExamComponent implements OnInit, OnDestroy {
     private subjectService: SubjectService,
     private router: Router,
     private route: ActivatedRoute,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private dialog: MatDialog
   ) { }
 
   subjects: Subject[] = [];

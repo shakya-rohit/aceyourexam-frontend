@@ -113,6 +113,24 @@ export class ApiService {
     });
   }
 
+  startOrResumeExam(examId: number): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/student/exams/${examId}/attempts/start`, {}, {
+      headers: this.getAuthHeaders()
+    });
+  }
+
+  saveAttemptAnswer(attemptId: number, questionId: number, payload: any): Observable<void> {
+    return this.http.put<void>(`${this.baseUrl}/student/attempts/${attemptId}/answers/${questionId}`, payload, {
+      headers: this.getAuthHeaders()
+    });
+  }
+
+  submitAttempt(attemptId: number, payload: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/student/attempts/${attemptId}/submit`, payload, {
+      headers: this.getAuthHeaders()
+    });
+  }
+
   submitExam(examId: number, payload: any): Observable<any> {
     return this.http.post(`${this.baseUrl}/student/attempts/submit/${examId}`, payload, {
       headers: this.getAuthHeaders()

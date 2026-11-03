@@ -29,7 +29,6 @@ export class ResultsComponent implements OnInit {
   @ViewChild(BaseChartDirective) chart?: BaseChartDirective;
 
   attempts: AttemptResult[] = [];
-  examMaxScores = new Map<number, number>();
   loading = true;
   loadError = false;
   selectedExamTitle = 'ALL';
@@ -98,26 +97,7 @@ export class ResultsComponent implements OnInit {
     // The persisted attempt list is the source of truth. Clear the one-time
     // submit response so a refresh cannot replace history with a single card.
     localStorage.removeItem('LAST_RESULT');
-    this.loadExams();
     this.loadAttempts(studentId);
-  }
-
-  private loadExams(): void {
-    this.api.getExams().subscribe({
-      next: (response) => {
-        const exams = Array.isArray(response) ? response : [];
-        this.examMaxScores = new Map(
-          exams
-            .filter((exam: any) => Number(exam.totalMarks) > 0)
-            .map((exam: any) => [Number(exam.id), Number(exam.totalMarks)]),
-        );
-        this.applyScoreMaxima();
-      },
-      error: () => {
-        // The result list remains useful when exam metadata is unavailable.
-        this.applyScoreMaxima();
-      },
-    });
   }
 
   private loadAttempts(studentId: number): void {
@@ -134,11 +114,10 @@ export class ResultsComponent implements OnInit {
             wrongCount: Number(result.wrongCount) || 0,
             accuracy: Number(result.accuracy) || 0,
             submittedAt: result.submittedAt,
-            maxScore: 720,
+            maxScore: Number(result.totalMarks) || 720,
           }))
           .sort((a, b) => this.timestamp(b.submittedAt) - this.timestamp(a.submittedAt));
 
-        this.applyScoreMaxima();
         this.loading = false;
         this.updateChart();
       },
@@ -147,14 +126,6 @@ export class ResultsComponent implements OnInit {
         this.loading = false;
       },
     });
-  }
-
-  private applyScoreMaxima(): void {
-    this.attempts = this.attempts.map((attempt) => ({
-      ...attempt,
-      maxScore: this.examMaxScores.get(attempt.examId) || 720,
-    }));
-    this.updateChart();
   }
 
   get filteredAttempts(): AttemptResult[] {

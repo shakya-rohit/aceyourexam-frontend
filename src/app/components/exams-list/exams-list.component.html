@@ -15,6 +15,7 @@
     </div>
 
     <p class="error-message" role="alert" *ngIf="errorMessage">{{ errorMessage }}</p>
+    <p class="error-message" role="alert" *ngIf="deleteErrorMessage">{{ deleteErrorMessage }}</p>
 
     <!-- Exams Table -->
     <mat-card *ngIf="!loading && !errorMessage">

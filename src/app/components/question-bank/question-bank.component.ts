@@ -15,7 +15,9 @@ import { QuestionBankService } from '../../services/question-bank.service';
 import { Subject, SubjectService, Topic } from '../../services/subject.service';
 import { MatDividerModule } from "@angular/material/divider";
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDialog } from '@angular/material/dialog';
 import { Subject as RxSubject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
+import { ConfirmActionDialogComponent } from '../../shared/confirm-action-dialog.component';
 
 @Component({
   selector: 'app-question-bank',
@@ -79,7 +81,8 @@ export class QuestionBankComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private questionBankService: QuestionBankService,
     private subjectService: SubjectService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private dialog: MatDialog
   ) { }
 
   ngOnInit(): void {
@@ -237,12 +240,22 @@ export class QuestionBankComponent implements OnInit, OnDestroy {
 
 
   delete(id: number) {
-    if (!confirm('Delete this question?')) return;
-    this.questionBankService.delete(id).subscribe(() => {
-      this.snackBar.open('Question deleted.', 'Dismiss', { duration: 2500 });
-      if (this.questions.length === 1 && this.page > 0) this.page--;
-      this.loadQuestions();
-    }, () => this.snackBar.open('Could not delete the question. Please try again.', 'Dismiss', { duration: 4000 }));
+    const question = this.questions.find(item => Number(item.id) === Number(id));
+    this.dialog.open(ConfirmActionDialogComponent, {
+      width: '480px', maxWidth: 'calc(100vw - 32px)', panelClass: 'confirm-action-dialog-panel',
+      data: {
+        title: 'Delete question?',
+        messages: [question?.text ? `Are you sure you want to delete “${question.text}”?` : 'Are you sure you want to delete this question?', 'This action can’t be undone.'],
+        confirmLabel: 'Delete'
+      }
+    }).afterClosed().subscribe(confirmed => {
+      if (!confirmed) return;
+      this.questionBankService.delete(id).subscribe(() => {
+        this.snackBar.open('Question deleted.', 'Dismiss', { duration: 2500 });
+        if (this.questions.length === 1 && this.page > 0) this.page--;
+        this.loadQuestions();
+      }, () => this.snackBar.open('Could not delete the question. Please try again.', 'Dismiss', { duration: 4000 }));
+    });
   }
 
   reset() {

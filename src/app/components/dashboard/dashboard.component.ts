@@ -9,6 +9,7 @@ interface DashboardAttempt {
   id: number;
   examId: number;
   examTitle: string;
+  totalMarks: number;
   totalScore: number;
   correctCount: number;
   wrongCount: number;
@@ -158,6 +159,7 @@ export class DashboardComponent implements OnInit {
             id: Number(result.id),
             examId: Number(result.examId),
             examTitle: result.examTitle || 'Untitled exam',
+            totalMarks: Number(result.totalMarks) || 0,
             totalScore: Number(result.totalScore) || 0,
             correctCount: Number(result.correctCount) || 0,
             wrongCount: Number(result.wrongCount) || 0,
@@ -271,6 +273,7 @@ export class DashboardComponent implements OnInit {
   }
 
   maxScoreFor(attempt: DashboardAttempt): number {
+    if (attempt.totalMarks > 0) return attempt.totalMarks;
     const matchingExam = this.exams.find((exam) => Number(exam.id) === attempt.examId);
     return Number(matchingExam?.totalMarks) > 0 ? Number(matchingExam.totalMarks) : 720;
   }

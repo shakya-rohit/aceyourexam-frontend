@@ -31,31 +31,29 @@ export class HeaderComponent implements OnInit {
   constructor(private api: ApiService, private router: Router) {}
 
   ngOnInit(): void {
-    this.isLoggedIn = !!localStorage.getItem('AYE_TOKEN');
-
-    if (this.isLoggedIn) {
-      const userData = localStorage.getItem('AYE_USER');
-      if (userData) {
-        try {
-          const parsed = JSON.parse(userData);
-          this.userName = parsed.name || 'User';
-          this.userRole = parsed.role || 'STUDENT';
-        } catch {
-          this.userName = 'User';
-          this.userRole = 'STUDENT';
-        }
-      }
-    }
+    this.refreshUserState();
 
     this.api.loginStatus$.subscribe(status => {
-      this.isLoggedIn = status;
-      if (status) {
-        const userData = localStorage.getItem('AYE_USER');
-        this.userName = userData ? JSON.parse(userData).name || 'User' : 'User';
-      } else {
-        this.userName = '';
-      }
+      this.refreshUserState(status);
     });
+  }
+
+  private refreshUserState(loggedIn = !!localStorage.getItem('AYE_TOKEN')): void {
+    this.isLoggedIn = loggedIn;
+    if (!loggedIn) {
+      this.userName = '';
+      this.userRole = 'STUDENT';
+      return;
+    }
+
+    try {
+      const user = JSON.parse(localStorage.getItem('AYE_USER') || '{}');
+      this.userName = user.name || 'User';
+      this.userRole = String(user.role || 'STUDENT').toUpperCase();
+    } catch {
+      this.userName = 'User';
+      this.userRole = 'STUDENT';
+    }
   }
 
   logout(): void {

@@ -2,10 +2,12 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { interval, Subscription } from 'rxjs';
+import { catchError, concatMap, interval, of, Subject, Subscription } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 
 import { ApiService } from '../../services/api.service';
+import { ConfirmActionDialogComponent } from '../../shared/confirm-action-dialog.component';
 
 @Component({
   selector: 'app-exam-runner',
@@ -43,10 +45,15 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
   loadingQuestions = true;
   questionLoadError = '';
   submitError = '';
+  attemptId?: number;
+  saveStatus = '';
+  private answerSaveQueue = new Subject<{ questionId: number; selectedOptionIndex: number | null; timeSpent: number; markedForReview: boolean }>();
+  private lastTimeCheckpoint = Date.now();
 
   constructor(
     private api: ApiService,
-    private router: Router
+    private router: Router,
+    private dialog: MatDialog
   ) { }
 
   ngOnInit(): void {
@@ -63,6 +70,18 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
       this.router.navigate(['/dashboard']);
       return;
     }
+    this.answerSaveQueue.pipe(concatMap(answer => this.api.saveAttemptAnswer(this.attemptId!, answer.questionId, {
+      selectedOptionIndex: answer.selectedOptionIndex,
+      timeSpent: answer.timeSpent,
+      markedForReview: answer.markedForReview
+    }).pipe(catchError(() => {
+      return of('SAVE_FAILED');
+    })))).subscribe({
+      next: result => this.saveStatus = result === 'SAVE_FAILED'
+        ? 'Could not save changes. Check your connection.'
+        : 'All changes saved',
+      error: () => this.saveStatus = 'Could not save changes. Check your connection.'
+    });
     this.loadQuestions();
   }
 
@@ -73,6 +92,11 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
       if (this.hasSubmitted || this.isSubmitting) return;
       this.timeLeft = Math.max(0, this.timeLeft - 1);
       this.formattedTime = this.formatTime(this.timeLeft);
+
+      if (Date.now() - this.lastTimeCheckpoint >= 15000) {
+        this.recordTime();
+        this.lastTimeCheckpoint = Date.now();
+      }
 
       if (this.timeLeft <= 0) {
         this.timerSub?.unsubscribe();
@@ -92,14 +116,20 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
   loadQuestions() {
     this.loadingQuestions = true;
     this.questionLoadError = '';
-    this.api.getQuestionsForAttempt(this.exam.id).subscribe({
+    this.api.startOrResumeExam(this.exam.id).subscribe({
       next: res => {
         this.loadingQuestions = false;
+        this.attemptId = res.attemptId;
+        (res.answers || []).forEach((answer: any) => {
+          if (answer.selectedOptionIndex !== null && answer.selectedOptionIndex !== undefined) this.answers[answer.questionId] = answer.selectedOptionIndex;
+          this.timeSpent[answer.questionId] = answer.timeSpent || 0;
+          this.markedForReview[answer.questionId] = !!answer.markedForReview;
+        });
         // Reset data (important if component reloads)
         this.questions = [];
         this.sections = [];
 
-        this.questions = (res || []).map((q: any) => ({
+        this.questions = (res.questions || []).map((q: any) => ({
           ...q,
           options: q.optionList,
           type: 'SINGLE_CORRECT'
@@ -131,9 +161,10 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
           this.questionLoadError = 'This exam does not have any questions yet. Please contact the exam administrator.';
           return;
         }
-        this.timeLeft = Math.max(1, Number(this.exam.durationMinutes) || 1) * 60;
+        this.timeLeft = Math.max(0, Number(res.remainingSeconds) || 0);
         this.formattedTime = this.formatTime(this.timeLeft);
-        this.startTimer();
+        if (this.timeLeft === 0) this.submitExam(true);
+        else this.startTimer();
       },
       error: () => {
         this.loadingQuestions = false;
@@ -176,6 +207,7 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
 
   selectAnswer(qId: number, value: any) {
     this.answers[qId] = value;
+    this.queueAnswerSave(qId);
   }
 
   recordTime() {
@@ -185,6 +217,20 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
 
     const sec = Math.floor((Date.now() - this.questionStartTime) / 1000);
     this.timeSpent[q.id] = (this.timeSpent[q.id] || 0) + sec;
+    this.questionStartTime = Date.now();
+    this.lastTimeCheckpoint = this.questionStartTime;
+    this.queueAnswerSave(q.id);
+  }
+
+  private queueAnswerSave(questionId: number): void {
+    if (!this.attemptId || this.hasSubmitted || this.timeLeft <= 0) return;
+    this.saveStatus = 'Saving…';
+    this.answerSaveQueue.next({
+      questionId,
+      selectedOptionIndex: this.answers[questionId] ?? null,
+      timeSpent: this.timeSpent[questionId] || 0,
+      markedForReview: !!this.markedForReview[questionId]
+    });
   }
 
   /* ---------------- SUBMIT ---------------- */
@@ -193,14 +239,24 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
     if (this.isSubmitting || this.hasSubmitted || !this.questions.length) return;
     const reviewCount = Object.values(this.markedForReview).filter(v => v).length;
 
-    if (!autoSubmitted && reviewCount > 0) {
-      const proceed = confirm(
-        `You have ${reviewCount} questions marked for review. Submit anyway?`
-      );
-      if (!proceed) return;
-    } else if (!autoSubmitted) {
-      if (!confirm('Submit exam?')) return;
+    if (autoSubmitted) {
+      this.submitConfirmedExam();
+      return;
     }
+
+    const messages = reviewCount > 0
+      ? [`${reviewCount} question${reviewCount === 1 ? ' is' : 's are'} marked for review.`, 'Are you sure you want to submit the exam?']
+      : ['Are you sure you want to submit the exam?'];
+    this.dialog.open(ConfirmActionDialogComponent, {
+      width: '480px', maxWidth: 'calc(100vw - 32px)', panelClass: 'confirm-action-dialog-panel',
+      data: { title: 'Submit exam?', messages, confirmLabel: 'Submit', danger: false }
+    }).afterClosed().subscribe(confirmed => {
+      if (confirmed) this.submitConfirmedExam();
+    });
+  }
+
+  private submitConfirmedExam(): void {
+    if (this.isSubmitting || this.hasSubmitted || !this.questions.length) return;
 
     this.recordTime();
     this.isSubmitting = true;
@@ -216,7 +272,12 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
       }))
     };
 
-    this.api.submitExam(this.exam.id, payload).subscribe({
+    if (!this.attemptId) {
+      this.isSubmitting = false;
+      this.submitError = 'The attempt session is not ready. Please reload the exam.';
+      return;
+    }
+    this.api.submitAttempt(this.attemptId, payload).subscribe({
       next: res => {
         this.hasSubmitted = true;
         localStorage.setItem('LAST_RESULT', JSON.stringify(res));
@@ -242,6 +303,7 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
     if (!this.currentQuestion) return;
     const qId = this.currentQuestion.id;
     this.markedForReview[qId] = !this.markedForReview[qId];
+    this.queueAnswerSave(qId);
   }
 
   isMarkedForReview(qId: number): boolean {
