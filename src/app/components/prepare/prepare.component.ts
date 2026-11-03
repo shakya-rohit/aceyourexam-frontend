@@ -107,7 +107,7 @@ export class PrepareComponent implements OnInit, OnDestroy {
             && (!this.plannedSubject || topic.subject === this.plannedSubject));
           if (plannedMatch) {
             this.totalQuestions = this.plannedQuestionCount;
-            this.startTopicPractice(plannedMatch.name, plannedMatch.subject);
+            this.startTopicPractice(plannedMatch.name, plannedMatch.subject, this.plannedQuestionCount);
           } else {
             this.errorMessage = 'This recommended topic is no longer available. Choose a topic below to practice.';
           }
@@ -187,23 +187,23 @@ export class PrepareComponent implements OnInit, OnDestroy {
     this.loadPracticeQuestions();
   }
 
-  startTopicPractice(topicName: string, subject?: string): void {
+  startTopicPractice(topicName: string, subject?: string, questionCount = this.totalQuestions): void {
     if (this.loading) return;
     if (this.timeMode === 'TIMED' && !this.isTimeLimitValid) {
       this.errorMessage = 'Set a time limit between 1 and 600 minutes before starting practice.';
       return;
     }
     this.selectedTopic = topicName;
-    this.loadPracticeQuestions(topicName, subject);
+    this.loadPracticeQuestions(topicName, subject, questionCount);
   }
 
-  private loadPracticeQuestions(topic?: string, subject?: string): void {
+  private loadPracticeQuestions(topic?: string, subject?: string, questionCount = this.totalQuestions): void {
     this.loading = true;
     this.errorMessage = '';
 
     const request: any = {
       examTypeId: this.examTypeId,
-      totalQuestions: topic ? 10 : this.totalQuestions,
+      totalQuestions: questionCount,
       mode: topic ? 'RANDOM' : this.mode,
       feedbackMode: this.feedbackMode,
       timeLimitMinutes: this.timeMode === 'TIMED' ? this.timeLimitMinutes : null,
