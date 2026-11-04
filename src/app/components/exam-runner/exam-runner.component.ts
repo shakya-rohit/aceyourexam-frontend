@@ -47,6 +47,7 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
   submitError = '';
   attemptId?: number;
   saveStatus = '';
+  private savedStatusTimeout?: ReturnType<typeof setTimeout>;
   private answerSaveQueue = new Subject<{ questionId: number; selectedOptionIndex: number | null; timeSpent: number; markedForReview: boolean }>();
   private lastTimeCheckpoint = Date.now();
 
@@ -77,10 +78,8 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
     }).pipe(catchError(() => {
       return of('SAVE_FAILED');
     })))).subscribe({
-      next: result => this.saveStatus = result === 'SAVE_FAILED'
-        ? 'Could not save changes. Check your connection.'
-        : 'All changes saved',
-      error: () => this.saveStatus = 'Could not save changes. Check your connection.'
+      next: result => this.updateSaveStatus(result === 'SAVE_FAILED' ? 'error' : 'saved'),
+      error: () => this.updateSaveStatus('error')
     });
     this.loadQuestions();
   }
@@ -224,13 +223,21 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
 
   private queueAnswerSave(questionId: number): void {
     if (!this.attemptId || this.hasSubmitted || this.timeLeft <= 0) return;
-    this.saveStatus = 'Saving…';
+    this.updateSaveStatus('saving');
     this.answerSaveQueue.next({
       questionId,
       selectedOptionIndex: this.answers[questionId] ?? null,
       timeSpent: this.timeSpent[questionId] || 0,
       markedForReview: !!this.markedForReview[questionId]
     });
+  }
+
+  private updateSaveStatus(status: 'saving' | 'saved' | 'error'): void {
+    if (this.savedStatusTimeout) clearTimeout(this.savedStatusTimeout);
+    this.saveStatus = status;
+    if (status === 'saved') {
+      this.savedStatusTimeout = setTimeout(() => this.saveStatus = '', 2200);
+    }
   }
 
   /* ---------------- SUBMIT ---------------- */
@@ -292,6 +299,7 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.timerSub?.unsubscribe();
+    if (this.savedStatusTimeout) clearTimeout(this.savedStatusTimeout);
     this.recordTime();
   }
 

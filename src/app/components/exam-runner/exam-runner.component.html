@@ -17,6 +17,11 @@
 
         <div class="header-center">
             ⏱ <strong>{{ formattedTime }}</strong>
+            <span class="save-indicator" *ngIf="saveStatus" [class.save-error-state]="saveStatus === 'error'"
+                role="status" aria-live="polite">
+                <span class="save-indicator-icon" aria-hidden="true">{{ saveStatus === 'saving' ? '⟳' : saveStatus === 'saved' ? '✓' : '!' }}</span>
+                <span>{{ saveStatus === 'saving' ? 'Saving' : saveStatus === 'saved' ? 'Saved' : 'Save failed' }}</span>
+            </span>
         </div>
 
         <div class="header-right">
@@ -27,7 +32,6 @@
     </div>
 
     <p class="submit-error" role="alert" *ngIf="submitError">{{ submitError }}</p>
-    <p class="submit-error" aria-live="polite" *ngIf="saveStatus">{{ saveStatus }}</p>
 
     <!-- BODY -->
     <div class="runner-body">
