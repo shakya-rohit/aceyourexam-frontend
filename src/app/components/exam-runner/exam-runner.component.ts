@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { catchError, concatMap, interval, of, Subject, Subscription } from 'rxjs';
+import { catchError, concatMap, debounceTime, groupBy, interval, mergeMap, of, Subject, Subscription } from 'rxjs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 
@@ -71,13 +71,19 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
       this.router.navigate(['/dashboard']);
       return;
     }
-    this.answerSaveQueue.pipe(concatMap(answer => this.api.saveAttemptAnswer(this.attemptId!, answer.questionId, {
-      selectedOptionIndex: answer.selectedOptionIndex,
-      timeSpent: answer.timeSpent,
-      markedForReview: answer.markedForReview
-    }).pipe(catchError(() => {
-      return of('SAVE_FAILED');
-    })))).subscribe({
+    this.answerSaveQueue.pipe(
+      groupBy(answer => answer.questionId),
+      mergeMap(questionSaves => questionSaves.pipe(
+        // Keep only the latest snapshot when answer, review, and navigation events
+        // for the same question happen in quick succession.
+        debounceTime(400),
+        concatMap(answer => this.api.saveAttemptAnswer(this.attemptId!, answer.questionId, {
+          selectedOptionIndex: answer.selectedOptionIndex,
+          timeSpent: answer.timeSpent,
+          markedForReview: answer.markedForReview
+        }).pipe(catchError(() => of('SAVE_FAILED'))))
+      ))
+    ).subscribe({
       next: result => this.updateSaveStatus(result === 'SAVE_FAILED' ? 'error' : 'saved'),
       error: () => this.updateSaveStatus('error')
     });
@@ -92,7 +98,7 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
       this.timeLeft = Math.max(0, this.timeLeft - 1);
       this.formattedTime = this.formatTime(this.timeLeft);
 
-      if (Date.now() - this.lastTimeCheckpoint >= 15000) {
+      if (Date.now() - this.lastTimeCheckpoint >= 60000) {
         this.recordTime();
         this.lastTimeCheckpoint = Date.now();
       }
@@ -215,10 +221,12 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
     if (!q) return;
 
     const sec = Math.floor((Date.now() - this.questionStartTime) / 1000);
-    this.timeSpent[q.id] = (this.timeSpent[q.id] || 0) + sec;
+    if (sec > 0) {
+      this.timeSpent[q.id] = (this.timeSpent[q.id] || 0) + sec;
+    }
     this.questionStartTime = Date.now();
     this.lastTimeCheckpoint = this.questionStartTime;
-    this.queueAnswerSave(q.id);
+    if (sec > 0) this.queueAnswerSave(q.id);
   }
 
   private queueAnswerSave(questionId: number): void {
