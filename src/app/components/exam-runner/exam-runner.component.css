@@ -250,7 +250,7 @@
     border-color: #1976d2;
 }
 
-.palette-btn.not-visited {
+.palette-btn.not-visited:not(.answered):not(.review) {
   background: #eeeeee;
 }
 

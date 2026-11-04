@@ -126,6 +126,9 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
         this.loadingQuestions = false;
         this.attemptId = res.attemptId;
         (res.answers || []).forEach((answer: any) => {
+          // A saved answer row means this question was visited, even if it was
+          // left unanswered or only marked for review.
+          this.visited[answer.questionId] = true;
           if (answer.selectedOptionIndex !== null && answer.selectedOptionIndex !== undefined) this.answers[answer.questionId] = answer.selectedOptionIndex;
           this.timeSpent[answer.questionId] = answer.timeSpent || 0;
           this.markedForReview[answer.questionId] = !!answer.markedForReview;
