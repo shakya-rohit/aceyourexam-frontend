@@ -26,7 +26,7 @@ import { ApiService } from '../../services/api.service';
 import { MatOption } from "@angular/material/core";
 import { MatSelect } from "@angular/material/select";
 import { QuestionBankService } from '../../services/question-bank.service';
-import { ExamTypesService } from '../../services/exam-types.service';
+import { ExamType, ExamTypesService } from '../../services/exam-types.service';
 import { Subject, SubjectService, Topic } from '../../services/subject.service';
 import { Subject as RxSubject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import { ConfirmActionDialogComponent } from '../../shared/confirm-action-dialog.component';
@@ -116,7 +116,7 @@ export class CreateExamComponent implements OnInit, OnDestroy {
 
   reviewWarnings: string[] = [];
 
-  examTypes: any[] = [];
+  examTypes: ExamType[] = [];
   isLoading: boolean = false;
 
   togglePreview() {
@@ -754,6 +754,10 @@ export class CreateExamComponent implements OnInit, OnDestroy {
   onExamTypeChange(examTypeId: number | null) {
     if (this.isPublished) return;
     this.filters.examTypeId = examTypeId ? Number(examTypeId) : null;
+    const selectedExamType = this.examTypes.find(type => type.id === Number(examTypeId));
+    if (selectedExamType?.standardDurationMinutes && selectedExamType.standardDurationMinutes > 0) {
+      this.examDetailsGroup.get('durationMinutes')?.setValue(selectedExamType.standardDurationMinutes);
+    }
     this.filters.subject = '';
     this.filters.topic = '';
     this.filters.difficulty = [];

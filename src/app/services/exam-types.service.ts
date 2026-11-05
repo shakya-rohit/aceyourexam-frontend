@@ -7,6 +7,8 @@ export interface ExamType {
   id: number;
   name: string;
   description: string;
+  standardDurationMinutes?: number | null;
+  standardTotalMarks?: number | null;
 }
 
 @Injectable({
