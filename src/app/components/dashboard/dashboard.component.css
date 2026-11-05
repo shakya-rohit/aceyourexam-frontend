@@ -33,7 +33,7 @@
 .next-exam-kicker {
   margin: 0 0 7px;
   color: #5163bb;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.09em;
 }
@@ -221,7 +221,7 @@ h2 {
 .metric-detail {
   margin-top: 3px;
   color: #7a849a;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .metric-card > strong {
@@ -233,7 +233,7 @@ h2 {
 
 .metric-card > strong small {
   color: #768099;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
 }
 
@@ -331,7 +331,7 @@ h2 {
 
 .subject-item small {
   color: #7a849a;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .focus-callout {
@@ -423,7 +423,7 @@ h2 {
 .attempt-copy strong,
 .action-row strong {
   overflow: hidden;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -432,7 +432,7 @@ h2 {
 .attempt-copy small,
 .action-row small {
   color: #7a849a;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .attempt-result {
@@ -527,14 +527,14 @@ h2 {
 .available-card strong {
   overflow: hidden;
   color: #303b55;
-  font-size: 13px;
+  font-size: 14px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .available-card span {
   color: #7a849a;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .inline-error {

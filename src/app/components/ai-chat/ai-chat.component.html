@@ -18,7 +18,17 @@
     <div class="thread" *ngIf="messages.length > 0">
       <div *ngFor="let msg of messages" class="message-row" [ngClass]="msg.role === 'user' ? 'user-row' : 'assistant-row'">
         <span *ngIf="msg.role === 'assistant'" class="assistant-mark" aria-label="AI Coach">✦</span>
-        <div class="bubble" [innerHTML]="formatMessage(msg.text)"></div>
+        <div class="message-content">
+          <div class="bubble" [innerHTML]="formatMessage(msg.text)"></div>
+          <div class="message-actions" *ngIf="msg.actions?.length">
+            <button type="button" class="action-chip" *ngFor="let action of msg.actions" [disabled]="loading" (click)="sendAction(action)">
+              {{ action }} <span aria-hidden="true">→</span>
+            </button>
+          </div>
+          <button type="button" class="retry-button" *ngIf="msg.retryable" [disabled]="loading" (click)="retryLast()">
+            Try again
+          </button>
+        </div>
       </div>
 
       <div *ngIf="loading" class="message-row assistant-row" aria-label="AI Coach is thinking">
@@ -30,9 +40,10 @@
 
   <footer class="composer-dock">
     <div class="composer-inner">
-      <div class="suggestions" *ngIf="suggestions.length" aria-label="Suggested prompts">
-        <button type="button" class="suggestion-chip" *ngFor="let suggestion of suggestions" [disabled]="loading" (click)="sendQuick(suggestion)">
-          {{ suggestion }}
+      <div class="composer-toolbar" *ngIf="messages.length > 0">
+        <span>Ask a follow-up or explore another topic</span>
+        <button type="button" class="new-chat-button" [disabled]="loading" (click)="startNewChat()">
+          <span aria-hidden="true">＋</span> New chat
         </button>
       </div>
       <div class="composer">
