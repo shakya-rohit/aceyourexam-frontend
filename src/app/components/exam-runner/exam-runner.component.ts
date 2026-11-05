@@ -137,24 +137,44 @@ export class ExamRunnerComponent implements OnInit, OnDestroy {
         this.questions = [];
         this.sections = [];
 
-        this.questions = (res.questions || []).map((q: any) => ({
+        const loadedQuestions = (res.questions || []).map((q: any) => ({
           ...q,
           options: q.optionList,
           type: 'SINGLE_CORRECT'
         }));
 
-        // Build sections from the subjects actually present in this exam.
-        const sectionsBySubject = new Map<string, { name: string; questionIndexes: number[] }>();
-        this.questions.forEach((q, index) => {
+        // Group questions into subject blocks so sequential navigation and the
+        // global question numbers follow the same order as the subject tabs.
+        const questionsBySubject = new Map<string, any[]>();
+        loadedQuestions.forEach((q: any) => {
           const subject = String(q.subject || 'Other').trim() || 'Other';
-          let section = sectionsBySubject.get(subject);
-          if (!section) {
-            section = { name: subject, questionIndexes: [] };
-            sectionsBySubject.set(subject, section);
-          }
-          section.questionIndexes.push(index);
+          const sectionQuestions = questionsBySubject.get(subject) || [];
+          sectionQuestions.push(q);
+          questionsBySubject.set(subject, sectionQuestions);
         });
-        this.sections = Array.from(sectionsBySubject.values());
+
+        this.questions = [];
+        this.sections = [];
+        const subjectOrder: Record<string, number> = {
+          physics: 0,
+          chemistry: 1,
+          biology: 2,
+          botany: 2,
+          zoology: 2
+        };
+        const orderedSections = Array.from(questionsBySubject.entries())
+          .sort(([left], [right]) =>
+            (subjectOrder[left.toLowerCase()] ?? 3) - (subjectOrder[right.toLowerCase()] ?? 3)
+          );
+
+        orderedSections.forEach(([name, sectionQuestions]) => {
+          const questionIndexes: number[] = [];
+          sectionQuestions.forEach(question => {
+            questionIndexes.push(this.questions.length);
+            this.questions.push(question);
+          });
+          this.sections.push({ name, questionIndexes });
+        });
 
         // Default to the first available subject section.
         this.activeSectionIndex = 0;

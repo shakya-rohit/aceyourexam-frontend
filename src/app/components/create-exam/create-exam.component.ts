@@ -658,9 +658,12 @@ export class CreateExamComponent implements OnInit, OnDestroy {
 
     req$.subscribe({
       next: () => this.router.navigate(['/exam-list']),
-      error: () => {
+      error: (error: any) => {
         this.submitting = false;
-        this.showError('Could not publish the exam. Check that it has questions and try again.');
+        const message = typeof error?.error?.message === 'string'
+          ? error.error.message
+          : 'Could not publish the exam. Check that it has questions and try again.';
+        this.showError(message);
       }
     });
   }
